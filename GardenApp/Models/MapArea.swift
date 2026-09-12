@@ -20,6 +20,16 @@ final class MapArea: Identifiable {
     @Relationship(deleteRule: .cascade, inverse: \PlacedPlant.mapArea)
     var placedPlants: [PlacedPlant]? = []
 
+    /// Structures placed on this map (e.g. the Greenhouse, placed on the Garden).
+    @Relationship(deleteRule: .cascade, inverse: \Structure.mapArea)
+    var structures: [Structure]? = []
+
+    /// Structures elsewhere that lead into this map when tapped (e.g. the
+    /// Greenhouse structure on the Garden map links into this MapArea when
+    /// this is the Greenhouse map itself).
+    @Relationship(inverse: \Structure.linkedMapArea)
+    var enteredByStructures: [Structure]? = []
+
     init(
         id: UUID = UUID(),
         name: String,

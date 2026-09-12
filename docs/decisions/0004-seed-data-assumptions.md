@@ -1,5 +1,10 @@
 # 0004 — Seed data assumes Northern Hemisphere
 
+> **Superseded by [0007](0007-sweden-focus.md).** The app is now explicitly
+> focused on Sweden; seed data uses Swedish plant names and a Swedish
+> growing season, not the generic Northern Hemisphere assumption described
+> below. Kept for history.
+
 ## Context
 
 The starter plant/tree catalog and monthly task list need concrete

@@ -5,28 +5,21 @@ struct RootTabView: View {
     @Query(filter: #Predicate<MapArea> { $0.kindRaw == "outdoor" })
     private var outdoorAreas: [MapArea]
 
-    @Query(filter: #Predicate<MapArea> { $0.kindRaw == "greenhouse" })
-    private var greenhouseAreas: [MapArea]
-
     var body: some View {
         TabView {
             Group {
                 if let garden = outdoorAreas.first {
-                    GardenMapView(mapArea: garden)
+                    NavigationStack {
+                        GardenMapView(mapArea: garden)
+                            .navigationDestination(for: MapArea.self) { area in
+                                GardenMapView(mapArea: area)
+                            }
+                    }
                 } else {
                     ProgressView()
                 }
             }
             .tabItem { Label("Garden", systemImage: "leaf.fill") }
-
-            Group {
-                if let greenhouse = greenhouseAreas.first {
-                    GardenMapView(mapArea: greenhouse)
-                } else {
-                    ProgressView()
-                }
-            }
-            .tabItem { Label("Greenhouse", systemImage: "house.fill") }
 
             CareCalendarView()
                 .tabItem { Label("Calendar", systemImage: "calendar") }

@@ -3,10 +3,12 @@
 ## What this is
 
 A personal iPhone app (native SwiftUI) for tracking a home garden and
-greenhouse: a virtual map for placing plants/trees into beds, a monthly
-care-task calendar, and a plant care wiki. Built for exactly two users
-(the repo owner and their spouse) sharing one iCloud account — there is no
-in-app authentication, multi-tenancy, or public distribution. See
+greenhouse **in Sweden**: a virtual map for placing plants/trees into beds,
+a monthly care-task calendar, and a plant care wiki. Focused specifically
+on Sweden — Swedish climate/growing season and common Swedish garden
+plants, not a generic international gardening app. Built for exactly two
+users (the repo owner and their spouse) sharing one iCloud account — there
+is no in-app authentication, multi-tenancy, or public distribution. See
 `docs/plans/2026-09-11-garden-app-design.md` for the full product design and
 `docs/decisions/` for why specific technical choices were made.
 
@@ -49,13 +51,18 @@ verified.
   via XcodeGen. Edit `project.yml`, then run `xcodegen generate` — never
   hand-edit `GardenApp.xcodeproj` directly, those changes will be lost on
   the next generate.
-- **Data model:** `PlantSpecies` (the wiki entry / catalog, e.g. "Tomato"),
-  `MapArea` (the Garden or the Greenhouse), `Bed` (a plot/pallet within a
-  MapArea), `PlacedPlant` (one actual plant/tree instance, positioned on a
-  MapArea and optionally inside a Bed), `MonthlyTaskTemplate` (calendar
-  tasks by month, 1-12).
-- **Tabs:** Garden map, Greenhouse map (same `GardenMapView`, different
-  `MapArea`), Care Calendar, Plant Wiki.
+- **Data model:** `PlantSpecies` (the wiki entry / catalog, e.g.
+  "Äppelträd"), `MapArea` (the Garden or the Greenhouse), `Bed` (a
+  plot/pallet within a MapArea), `Structure` (a physical thing placed on a
+  MapArea, e.g. the greenhouse building, optionally linking into another
+  MapArea when tapped), `PlacedPlant` (one actual plant/tree instance,
+  positioned on a MapArea and optionally inside a Bed),
+  `MonthlyTaskTemplate` (calendar tasks by month, 1-12).
+- **Tabs:** Garden (home screen — outdoor map, including the greenhouse
+  building; tapping it pushes into the Greenhouse's own map via the same
+  `GardenMapView`), Care Calendar, Plant Wiki. There is no separate
+  Greenhouse tab — see `docs/decisions/0006-garden-home-with-structures.md`.
 - **First-launch data:** `GardenApp/Seed/SeedData.swift` seeds the two
-  MapAreas, a starter plant/tree catalog, and generic monthly tasks —
-  Northern Hemisphere assumptions, see `docs/decisions/0004-seed-data-assumptions.md`.
+  MapAreas, the Greenhouse Structure, a starter catalog of common Swedish
+  garden plants, and monthly tasks tuned to a Swedish growing season — see
+  `docs/decisions/0007-sweden-focus.md`.

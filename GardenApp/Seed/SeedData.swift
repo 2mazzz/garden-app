@@ -1,29 +1,48 @@
 import Foundation
 import SwiftData
 
-/// Populates first-launch data: the two MapAreas (garden + greenhouse), a
-/// starter plant/tree catalog for the wiki, and a generic set of monthly
-/// tasks. Runs once — checks for existing data before inserting anything,
-/// so it's safe to call on every launch.
+/// Populates first-launch data: the two MapAreas (garden + greenhouse), the
+/// Greenhouse structure placed on the garden map, a starter plant/tree
+/// catalog for the wiki, and a set of monthly tasks. Runs once — checks for
+/// existing data before inserting anything, so it's safe to call on every
+/// launch.
 ///
-/// Planting/harvest months below assume the Northern Hemisphere. If that's
-/// wrong for your garden, edit the months on each wiki entry — see
-/// docs/decisions/0004-seed-data-assumptions.md.
+/// This app is focused on Sweden: planting/harvest months and tasks below
+/// assume a typical central/southern Swedish climate (roughly odlingszon
+/// II-III — Svealand). If your garden is further north or south, edit the
+/// months on each wiki entry — see docs/decisions/0007-sweden-focus.md.
 enum SeedData {
     static func populateIfNeeded(in context: ModelContext) {
-        seedMapAreasIfNeeded(in: context)
+        seedMapAreasAndStructuresIfNeeded(in: context)
         seedSpeciesIfNeeded(in: context)
         seedTasksIfNeeded(in: context)
         try? context.save()
     }
 
-    private static func seedMapAreasIfNeeded(in context: ModelContext) {
+    private static func seedMapAreasAndStructuresIfNeeded(in context: ModelContext) {
         let descriptor = FetchDescriptor<MapArea>()
         let existing = (try? context.fetch(descriptor)) ?? []
         guard existing.isEmpty else { return }
 
-        context.insert(MapArea(name: "Garden", kind: .outdoor, columns: 10, rows: 14))
-        context.insert(MapArea(name: "Greenhouse", kind: .greenhouse, columns: 6, rows: 8))
+        let garden = MapArea(name: "Garden", kind: .outdoor, columns: 10, rows: 14)
+        let greenhouse = MapArea(name: "Greenhouse", kind: .greenhouse, columns: 6, rows: 8)
+        context.insert(garden)
+        context.insert(greenhouse)
+
+        // Placed near a corner of the garden so it doesn't overlap the
+        // default empty space where beds usually go.
+        let greenhouseStructure = Structure(
+            name: "Greenhouse",
+            x: 7,
+            y: 0,
+            width: 3,
+            height: 3,
+            colorHex: "#6B8CA3",
+            symbolName: "house.fill",
+            mapArea: garden,
+            linkedMapArea: greenhouse
+        )
+        context.insert(greenhouseStructure)
     }
 
     private static func seedSpeciesIfNeeded(in context: ModelContext) {
@@ -46,236 +65,241 @@ enum SeedData {
         }
     }
 
+    /// Common plants and trees found in Swedish home gardens, with
+    /// planting/harvest months tuned to a typical central/southern Swedish
+    /// growing season (short summers, frost risk into mid/late May).
     private static var starterSpecies: [PlantSpecies] {
         [
             PlantSpecies(
-                commonName: "Tomato",
-                scientificName: "Solanum lycopersicum",
+                commonName: "Potatis",
+                scientificName: "Solanum tuberosum",
                 category: .vegetable,
                 sunRequirement: .fullSun,
                 waterRequirement: .medium,
-                careNotes: "Stake or cage as it grows. Pinch off suckers for bigger fruit. Water at the base to avoid leaf blight.",
-                soilNotes: "Rich, well-drained soil with compost worked in.",
-                spacingNotes: "45-60cm apart.",
-                plantingMonths: [4, 5],
-                harvestMonths: [7, 8, 9],
+                careNotes: "Förgro (chitta) i ljus och svalt läge från februari. Kupa jord runt stjälkarna när de växer för att skydda mot grönfärgning.",
+                soilNotes: "Lucker, väldränerad jord.",
+                spacingNotes: "30-40cm mellan plantor.",
+                plantingMonths: [5],
+                harvestMonths: [8, 9],
                 symbolName: "carrot.fill",
-                colorHex: "#D64545"
+                colorHex: "#B08968"
             ),
             PlantSpecies(
-                commonName: "Carrot",
+                commonName: "Morot",
                 scientificName: "Daucus carota",
                 category: .vegetable,
                 sunRequirement: .fullSun,
                 waterRequirement: .medium,
-                careNotes: "Thin seedlings once they sprout so roots have room. Keep soil consistently moist.",
-                soilNotes: "Loose, stone-free soil so roots grow straight.",
-                spacingNotes: "Thin to 5-8cm apart.",
-                plantingMonths: [3, 4, 5],
-                harvestMonths: [7, 8, 9],
+                careNotes: "Gallra groddplantorna så att rötterna får plats. Håll jorden jämnt fuktig för raka morötter.",
+                soilNotes: "Lucker, stenfri jord så rötterna växer raka.",
+                spacingNotes: "Gallra till 5-8cm mellan plantor.",
+                plantingMonths: [5, 6],
+                harvestMonths: [8, 9, 10],
                 symbolName: "carrot.fill",
                 colorHex: "#E8823C"
             ),
             PlantSpecies(
-                commonName: "Basil",
-                scientificName: "Ocimum basilicum",
+                commonName: "Rabarber",
+                scientificName: "Rheum rhabarbarum",
+                category: .vegetable,
+                sunRequirement: .fullSun,
+                waterRequirement: .medium,
+                careNotes: "Flerårig — sätts en gång och står kvar i många år. Undvik att skörda för hårt första året efter plantering.",
+                soilNotes: "Näringsrik, väldränerad jord med mycket kompost.",
+                spacingNotes: "1m mellan plantor, den breder ut sig.",
+                plantingMonths: [4, 5],
+                harvestMonths: [5, 6, 7],
+                symbolName: "carrot.fill",
+                colorHex: "#C23C4C"
+            ),
+            PlantSpecies(
+                commonName: "Dill",
+                scientificName: "Anethum graveolens",
                 category: .herb,
                 sunRequirement: .fullSun,
                 waterRequirement: .medium,
-                careNotes: "Pinch off flower buds to keep leaves coming. Harvest from the top down.",
-                soilNotes: "Well-drained, moderately rich soil.",
-                spacingNotes: "20-25cm apart.",
+                careNotes: "Självsår lätt om den får gå i blom. Så om varannan vecka under sommaren för jämn tillgång.",
+                soilNotes: "Näringsrik, väldränerad jord.",
+                spacingNotes: "20cm mellan plantor.",
                 plantingMonths: [5, 6],
-                harvestMonths: [6, 7, 8, 9],
+                harvestMonths: [7, 8],
                 symbolName: "leaf.fill",
                 colorHex: "#4E7A3D"
             ),
             PlantSpecies(
-                commonName: "Rosemary",
-                scientificName: "Salvia rosmarinus",
+                commonName: "Gräslök",
+                scientificName: "Allium schoenoprasum",
                 category: .herb,
                 sunRequirement: .fullSun,
-                waterRequirement: .low,
-                careNotes: "Let soil dry between waterings. Prune after flowering to keep shape. Can overwinter indoors in cold climates.",
-                soilNotes: "Sandy, well-drained soil.",
-                spacingNotes: "60cm apart if left to grow into a shrub.",
+                waterRequirement: .medium,
+                careNotes: "Flerårig. Klipp ner efter blomning för nya, mjuka blad. Går bra att dela och flytta på våren.",
+                soilNotes: "Näringsrik, fuktighetshållande jord.",
+                spacingNotes: "15-20cm mellan tuvor.",
                 plantingMonths: [4, 5],
-                harvestMonths: [6, 7, 8, 9, 10],
+                harvestMonths: [5, 6, 7, 8, 9],
                 symbolName: "leaf.fill",
                 colorHex: "#5C7A5C"
             ),
             PlantSpecies(
-                commonName: "Sunflower",
-                scientificName: "Helianthus annuus",
-                category: .flower,
-                sunRequirement: .fullSun,
+                commonName: "Persilja",
+                scientificName: "Petroselinum crispum",
+                category: .herb,
+                sunRequirement: .partialSun,
                 waterRequirement: .medium,
-                careNotes: "Stake tall varieties in windy spots. Deadhead to prolong blooming, or leave heads for birds in autumn.",
-                soilNotes: "Any well-drained soil.",
-                spacingNotes: "30-60cm apart depending on variety.",
-                plantingMonths: [4, 5],
-                harvestMonths: [8, 9],
-                symbolName: "camera.macro",
-                colorHex: "#E8B93C"
+                careNotes: "Tvåårig men odlas oftast som ettårig. Förgro gärna inomhus i april för tidigare skörd.",
+                soilNotes: "Näringsrik, väldränerad jord.",
+                spacingNotes: "20cm mellan plantor.",
+                plantingMonths: [5],
+                harvestMonths: [7, 8, 9],
+                symbolName: "leaf.fill",
+                colorHex: "#4E9A4E"
             ),
             PlantSpecies(
-                commonName: "Tulip",
-                scientificName: "Tulipa",
-                category: .flower,
+                commonName: "Jordgubbe",
+                scientificName: "Fragaria × ananassa",
+                category: .fruit,
                 sunRequirement: .fullSun,
                 waterRequirement: .medium,
-                careNotes: "Let foliage die back naturally after blooming before removing — it feeds next year's bulb.",
-                soilNotes: "Well-drained soil; bulbs rot in standing water.",
-                spacingNotes: "10-15cm apart, planted 15-20cm deep.",
-                plantingMonths: [10, 11],
-                harvestMonths: [4, 5],
-                symbolName: "camera.macro",
-                colorHex: "#C24C8C"
+                careNotes: "Täck med halm så bären hålls rena. Ta bort revor om du inte vill föröka, byt ut plantor efter 3-4 år.",
+                soilNotes: "Näringsrik, något sur, väldränerad jord.",
+                spacingNotes: "30cm mellan plantor.",
+                plantingMonths: [5, 8],
+                harvestMonths: [7],
+                symbolName: "applelogo",
+                colorHex: "#C23C4C"
             ),
             PlantSpecies(
-                commonName: "Blueberry Bush",
-                scientificName: "Vaccinium",
-                category: .shrub,
+                commonName: "Svarta vinbär",
+                scientificName: "Ribes nigrum",
+                category: .fruit,
                 sunRequirement: .fullSun,
                 waterRequirement: .medium,
-                careNotes: "Needs acidic soil. Mulch with pine bark or needles. Prune out old canes in late winter.",
-                soilNotes: "Acidic, well-drained soil (pH 4.5-5.5).",
-                spacingNotes: "1.2-1.5m apart.",
-                plantingMonths: [3, 4, 10, 11],
+                careNotes: "Beskär äldre grenar vid basen på vintern för att ge plats åt nya skott. Gödsla på våren.",
+                soilNotes: "Näringsrik, fuktighetshållande jord.",
+                spacingNotes: "1.2-1.5m mellan buskar.",
+                plantingMonths: [4, 10],
                 harvestMonths: [7, 8],
                 symbolName: "tree.fill",
-                colorHex: "#3E5C8A"
+                colorHex: "#3E3E5C"
             ),
             PlantSpecies(
-                commonName: "Lavender",
-                scientificName: "Lavandula",
-                category: .shrub,
+                commonName: "Krusbär",
+                scientificName: "Ribes uva-crispa",
+                category: .fruit,
                 sunRequirement: .fullSun,
-                waterRequirement: .low,
-                careNotes: "Prune hard after flowering to keep it compact and prevent it going woody. Avoid overwatering.",
-                soilNotes: "Poor to average, very well-drained soil.",
-                spacingNotes: "45-60cm apart.",
-                plantingMonths: [4, 5],
-                harvestMonths: [6, 7, 8],
-                symbolName: "leaf.fill",
-                colorHex: "#8B7CC2"
+                waterRequirement: .medium,
+                careNotes: "Tåligt buske, klarar halvskugga. Beskär för öppen krona så luft kan cirkulera och minska mjöldagg.",
+                soilNotes: "Väldränerad, näringsrik jord.",
+                spacingNotes: "1.2m mellan buskar.",
+                plantingMonths: [4, 10],
+                harvestMonths: [7, 8],
+                symbolName: "tree.fill",
+                colorHex: "#7A9A4E"
             ),
             PlantSpecies(
-                commonName: "Apple Tree",
+                commonName: "Äppelträd",
                 scientificName: "Malus domestica",
                 category: .tree,
                 sunRequirement: .fullSun,
                 waterRequirement: .medium,
                 isTree: true,
-                careNotes: "Prune in late winter while dormant to keep an open shape. Thin fruit clusters in early summer for bigger apples.",
-                soilNotes: "Deep, well-drained loam.",
-                spacingNotes: "3-5m apart depending on rootstock.",
-                plantingMonths: [11, 12, 2, 3],
+                careNotes: "Beskär i slutet av vintern (feb-mars) innan save börjar stiga. Gallra frukt i juni för större äpplen. Många svenska sorter behöver en pollinatörssort i närheten.",
+                soilNotes: "Djup, väldränerad, näringsrik jord.",
+                spacingNotes: "3-5m mellan träd beroende på grundstam.",
+                plantingMonths: [4, 10],
                 harvestMonths: [9, 10],
                 symbolName: "tree.fill",
                 colorHex: "#6B8E4E"
             ),
             PlantSpecies(
-                commonName: "Cherry Tree",
-                scientificName: "Prunus avium",
+                commonName: "Plommonträd",
+                scientificName: "Prunus domestica",
                 category: .tree,
                 sunRequirement: .fullSun,
                 waterRequirement: .medium,
                 isTree: true,
-                careNotes: "Prune in summer, never winter, to avoid silver leaf disease. Net against birds as fruit ripens.",
-                soilNotes: "Well-drained, slightly acidic to neutral soil.",
-                spacingNotes: "4-6m apart.",
-                plantingMonths: [11, 12, 2, 3],
-                harvestMonths: [6, 7],
-                symbolName: "tree.fill",
-                colorHex: "#7A3E4E"
-            ),
-            PlantSpecies(
-                commonName: "Lemon Tree",
-                scientificName: "Citrus limon",
-                category: .fruit,
-                sunRequirement: .fullSun,
-                waterRequirement: .medium,
-                isTree: true,
-                careNotes: "Frost-sensitive — best in a greenhouse or brought indoors over winter in cold climates. Feed with citrus fertilizer through the growing season.",
-                soilNotes: "Well-drained, slightly acidic soil.",
-                spacingNotes: "1.5-2m if potted; more if in open ground.",
-                plantingMonths: [4, 5],
-                harvestMonths: [11, 12, 1],
-                symbolName: "applelogo",
-                colorHex: "#D9C23C"
-            ),
-            PlantSpecies(
-                commonName: "Bell Pepper",
-                scientificName: "Capsicum annuum",
-                category: .vegetable,
-                sunRequirement: .fullSun,
-                waterRequirement: .medium,
-                careNotes: "Slow to start — good greenhouse candidate in cooler climates. Support heavier fruiting varieties with stakes.",
-                soilNotes: "Rich, well-drained soil.",
-                spacingNotes: "40-50cm apart.",
-                plantingMonths: [5, 6],
+                careNotes: "Beskär på sommaren, inte på vintern, för att undvika silverbladssjuka. Behöver ett skyddat, varmt läge i svenskt klimat.",
+                soilNotes: "Väldränerad, något kalkhaltig jord.",
+                spacingNotes: "4m mellan träd.",
+                plantingMonths: [4, 10],
                 harvestMonths: [8, 9],
-                symbolName: "carrot.fill",
-                colorHex: "#4E9A4E"
+                symbolName: "tree.fill",
+                colorHex: "#7A3E5C"
             ),
             PlantSpecies(
-                commonName: "Cucumber",
-                scientificName: "Cucumis sativus",
-                category: .vegetable,
+                commonName: "Syrén",
+                scientificName: "Syringa vulgaris",
+                category: .shrub,
                 sunRequirement: .fullSun,
-                waterRequirement: .high,
-                careNotes: "Give it a trellis to climb to keep fruit straight and reduce disease. Water consistently — irregular watering causes bitter fruit.",
-                soilNotes: "Rich, well-drained soil high in organic matter.",
-                spacingNotes: "30-45cm apart along a trellis.",
-                plantingMonths: [5, 6],
-                harvestMonths: [7, 8, 9],
-                symbolName: "carrot.fill",
-                colorHex: "#3E8A5C"
+                waterRequirement: .low,
+                careNotes: "Mycket vinterhärdig klassiker i svenska trädgårdar. Beskär direkt efter blomning, annars riskerar du att klippa bort nästa års blomknoppar.",
+                soilNotes: "Varierar, klarar de flesta jordar om det är väldränerat.",
+                spacingNotes: "2-3m mellan buskar om de ska bilda häck.",
+                plantingMonths: [4, 9],
+                harvestMonths: [5, 6],
+                symbolName: "leaf.fill",
+                colorHex: "#8B7CC2"
             ),
             PlantSpecies(
-                commonName: "Strawberry",
-                scientificName: "Fragaria × ananassa",
-                category: .fruit,
+                commonName: "Tulpan",
+                scientificName: "Tulipa",
+                category: .flower,
                 sunRequirement: .fullSun,
                 waterRequirement: .medium,
-                careNotes: "Mulch with straw to keep fruit off the soil. Remove runners unless you want to propagate more plants.",
-                soilNotes: "Rich, well-drained, slightly acidic soil.",
-                spacingNotes: "30cm apart.",
-                plantingMonths: [3, 4, 9],
-                harvestMonths: [6, 7],
-                symbolName: "applelogo",
-                colorHex: "#C23C4C"
+                careNotes: "Plantera lökar på hösten innan marken tjälar. Låt bladen vissna ner naturligt efter blomning innan du klipper bort dem.",
+                soilNotes: "Väldränerad jord — lökar ruttnar i stillastående vatten.",
+                spacingNotes: "10-15cm mellan lökar, planteras 15-20cm djupt.",
+                plantingMonths: [9, 10],
+                harvestMonths: [5],
+                symbolName: "camera.macro",
+                colorHex: "#C24C8C"
+            ),
+            PlantSpecies(
+                commonName: "Pion",
+                scientificName: "Paeonia",
+                category: .flower,
+                sunRequirement: .fullSun,
+                waterRequirement: .medium,
+                careNotes: "Flerårig och mycket långlivad — ogillar att flyttas. Plantera inte ögonen (knopparna) för djupt, annars blommar den sämre.",
+                soilNotes: "Näringsrik, väldränerad jord.",
+                spacingNotes: "60-90cm mellan plantor.",
+                plantingMonths: [9],
+                harvestMonths: [6],
+                symbolName: "camera.macro",
+                colorHex: "#D9518C"
             )
         ]
     }
 
+    /// Generic gardening tasks timed for a typical central/southern Swedish
+    /// growing season — short summers, frost risk lingering into May, and a
+    /// long dormant season where the greenhouse matters most.
     private static var starterTasks: [MonthlyTaskTemplate] {
         [
-            (1, "Plan the year's planting", "Review the wiki and order seeds for spring.", TaskCategory.other),
-            (1, "Prune dormant fruit trees", "Prune apple, pear and cherry while they're fully dormant.", .pruning),
-            (2, "Chit early potatoes", "Start seed potatoes indoors or in the greenhouse.", .planting),
-            (2, "Service tools", "Sharpen and clean pruners, spades and shears before the season starts.", .cleanup),
-            (3, "Start sowing hardy vegetables", "Carrots, peas and salad greens can go in once soil is workable.", .planting),
-            (3, "Feed beds with compost", "Top-dress beds with compost before the main growing season.", .fertilizing),
-            (4, "Sow tender vegetables under cover", "Start tomatoes, peppers and cucumbers in the greenhouse.", .greenhouse),
-            (4, "Watch for slugs", "Protect new seedlings as slugs become active.", .pestControl),
-            (5, "Harden off and transplant", "Move greenhouse seedlings outside gradually before planting out.", .planting),
-            (5, "Mulch beds", "Mulch to retain moisture as the weather warms.", .other),
-            (6, "Water consistently", "Increase watering frequency as temperatures rise, especially in the greenhouse.", .watering),
-            (6, "Stake and support", "Tie in tomatoes, cucumbers and tall flowers as they grow.", .other),
-            (7, "Harvest summer crops", "Pick regularly to keep plants productive.", .harvesting),
-            (7, "Deadhead flowers", "Remove spent blooms to encourage more flowering.", .pruning),
-            (8, "Keep up with watering", "Peak heat — check containers and the greenhouse daily.", .watering),
-            (8, "Summer-prune trained fruit trees", "Prune trained apples and pears to control growth.", .pruning),
-            (9, "Plant autumn/winter crops", "Sow overwintering vegetables and spring bulbs.", .planting),
-            (9, "Harvest and store", "Bring in the last of the summer harvest before frosts.", .harvesting),
-            (10, "Clear spent summer plants", "Compost finished crops and tidy beds.", .cleanup),
-            (10, "Plant spring bulbs", "Tulips, daffodils and other spring bulbs go in now.", .planting),
-            (11, "Protect tender plants", "Move frost-sensitive potted plants into the greenhouse.", .greenhouse),
-            (11, "Bare-root planting", "Good month to plant bare-root trees and shrubs.", .planting),
-            (12, "Insulate the greenhouse", "Add bubble insulation or a heater if frost is expected.", .greenhouse),
-            (12, "Rest and review", "Reflect on what worked this year and update the wiki with notes.", .other)
+            (1, "Planera odlingsåret", "Beställ frön tidigt — populära svenska sorter kan ta slut redan i februari. Gå igenom wikin för inspiration.", TaskCategory.other),
+            (1, "Kontrollera lagrad potatis och lökar", "Se till att inget ruttnar eller torkar ut i källaren under vintern.", .cleanup),
+            (2, "Förgro potatis", "Ställ utsädespotatis ljust och svalt för att chitta inför majplanteringen.", .planting),
+            (2, "Beskär fruktträd", "Beskär äpple och plommon medan de fortfarande är vintervila, gärna innan savningen startar i mars.", .pruning),
+            (3, "Sådd inomhus", "Starta tomater, paprika och andra långodlade grödor inomhus eller i växthuset med gro-ljus.", .greenhouse),
+            (3, "Service av växthuset", "Rengör växthusets glas/skivor och kontrollera värmekällan innan säsongen drar igång.", .greenhouse),
+            (4, "Förbered rabatterna", "Jobba in kompost när jorden har tinat och gå att bearbeta.", .fertilizing),
+            (4, "Plantera bärbuskar", "Plantera vinbär, krusbär och rabarber på barrot medan de fortfarande är i vila.", .planting),
+            (5, "Bevaka nattfrosten", "Nattfrost förekommer fortfarande in i maj i stora delar av Sverige — vänta med känsliga plantor tills risken är över.", .other),
+            (5, "Härda av och plantera ut", "Flytta ut växthusuppstartade tomater, gurka och paprika när frostrisken är över.", .planting),
+            (6, "Direktsådd utomhus", "Morötter, dill och andra snabba grödor gynnas av de långa junidagarna.", .planting),
+            (6, "Vattna under midsommar", "De långa ljusa timmarna ger snabb tillväxt — vattna nyplanterat rejält.", .watering),
+            (7, "Skörda sommarens bär", "Jordgubbar, vinbär och krusbär mognar vanligen under juli.", .harvesting),
+            (7, "Knip av och binda upp", "Håll tomater och blommor i schack under högsäsongens tillväxt.", .pruning),
+            (8, "Skörda och konservera", "Potatis, bär och örter är redo — frys eller syrsalta inför vintern, en klassisk svensk tradition.", .harvesting),
+            (8, "Så en andra omgång snabbväxande grödor", "Sallat och rädisor för en sen skörd innan nätterna blir kalla.", .planting),
+            (9, "Ta in växthusgrödorna", "Plocka eller flytta in tomater och paprika innan nätterna blir för kalla.", .harvesting),
+            (9, "Plantera vårlökar", "Tulpaner, pioner och andra vårblommande lökar/knölar sätts när jorden svalnat.", .planting),
+            (10, "Plantera fruktträd", "Barrotsplantering av äppel- och plommonträd på hösten innan marken tjälar.", .planting),
+            (10, "Städa och täck rabatterna", "Rensa bort sommarens uttjänta grödor och täck perenner inför frosten.", .cleanup),
+            (11, "Skydda känsliga plantor", "Flytta krukväxter in i växthuset eller ett frostfritt läge när de första hårda frostnätterna kommer.", .greenhouse),
+            (11, "Isolera växthuset", "Sätt in extra isolering eller en frostvakt inför de kallaste månaderna.", .greenhouse),
+            (12, "Sammanfatta året", "Anteckna vad som gick bra och uppdatera wikin inför nästa säsong.", .other),
+            (12, "Kolla övervintrande plantor", "Se till att inget i växthuset har frusit sönder eller torkat ut.", .other)
         ].map { month, title, details, category in
             MonthlyTaskTemplate(month: month, title: title, details: details, category: category, isBuiltIn: true)
         }

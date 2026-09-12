@@ -10,6 +10,7 @@ struct GardenAppApp: App {
             PlantSpecies.self,
             MapArea.self,
             Bed.self,
+            Structure.self,
             PlacedPlant.self,
             MonthlyTaskTemplate.self
         ])
