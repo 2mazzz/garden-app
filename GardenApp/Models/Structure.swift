@@ -7,14 +7,14 @@ import SwiftData
 /// greenhouse on the garden overview enters the greenhouse's own grid).
 @Model
 final class Structure: Identifiable {
-    var id: UUID
-    var name: String
-    var x: Int
-    var y: Int
-    var width: Int
-    var height: Int
-    var colorHex: String
-    var symbolName: String
+    var id: UUID = UUID()
+    var name: String = ""
+    var x: Int = 0
+    var y: Int = 0
+    var width: Int = 1
+    var height: Int = 1
+    var colorHex: String = "#6B6B6B"
+    var symbolName: String = "house.fill"
 
     /// The MapArea this structure sits on (e.g. the outdoor Garden).
     var mapArea: MapArea?

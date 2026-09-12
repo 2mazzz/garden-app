@@ -40,7 +40,22 @@ this app — SwiftData's `@Model` macro plugin and the iOS SDK both ship only
 with Xcode.app. If your environment only has Command Line Tools, you can
 still edit Swift/SwiftUI source and update `project.yml`, but you cannot
 compile or verify the build; say so rather than claiming a build was
-verified.
+verified. If `xcode-select -p` points at Command Line Tools even though
+`/Applications/Xcode.app` exists, you don't need the user's `sudo` to fix
+it for yourself — pass `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer`
+inline on `xcodebuild`/`xcrun` calls (shell env vars don't persist between
+tool calls in this harness, so it needs to be on every invocation, or
+resolved once via a script). Confirmed working this way on 2026-09-12: full
+build + `GardenAppUITests` run + Simulator install/launch, all without
+touching `xcode-select`.
+
+Two real (non-hypothetical) bugs only surfaced once an actual build ran —
+see [0008](docs/decisions/0008-cloudkit-fallback.md) and
+[0009](docs/decisions/0009-cloudkit-attribute-defaults.md). Static
+reasoning about SwiftData+CloudKit code is not a substitute for building
+it; when Xcode is available, always actually build (and ideally run
+`GardenAppUITests`) before claiming a change works, per the "Done means"
+rule above.
 
 ## Architecture at a glance
 

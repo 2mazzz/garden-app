@@ -6,13 +6,13 @@ import SwiftData
 /// these are the "what should I be doing in the garden this month" reminders.
 @Model
 final class MonthlyTaskTemplate: Identifiable {
-    var id: UUID
-    var month: Int
-    var title: String
-    var details: String
-    var categoryRaw: String
+    var id: UUID = UUID()
+    var month: Int = 1
+    var title: String = ""
+    var details: String = ""
+    var categoryRaw: String = TaskCategory.other.rawValue
     /// True for tasks seeded by the app; false for tasks the user added themselves.
-    var isBuiltIn: Bool
+    var isBuiltIn: Bool = false
 
     init(
         id: UUID = UUID(),

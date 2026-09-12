@@ -6,18 +6,18 @@ import SwiftData
 /// inside a Bed.
 @Model
 final class PlacedPlant: Identifiable {
-    var id: UUID
+    var id: UUID = UUID()
     var species: PlantSpecies?
     var mapArea: MapArea?
     var bed: Bed?
 
     /// Position in grid cells, relative to the owning MapArea.
-    var x: Int
-    var y: Int
+    var x: Int = 0
+    var y: Int = 0
 
-    var statusRaw: String
+    var statusRaw: String = PlantStatus.planned.rawValue
     var datePlanted: Date?
-    var notes: String
+    var notes: String = ""
 
     init(
         id: UUID = UUID(),

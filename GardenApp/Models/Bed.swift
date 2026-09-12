@@ -5,13 +5,17 @@ import SwiftData
 /// placed inside a bed; trees are usually placed directly on the map instead.
 @Model
 final class Bed: Identifiable {
-    var id: UUID
-    var name: String
-    var x: Int
-    var y: Int
-    var width: Int
-    var height: Int
-    var colorHex: String
+    // Every stored attribute needs a default value at the declaration
+    // (not just as an init parameter default) — CloudKit-backed SwiftData
+    // sync requires every non-optional attribute to have one. See
+    // docs/decisions/0008-cloudkit-fallback.md.
+    var id: UUID = UUID()
+    var name: String = ""
+    var x: Int = 0
+    var y: Int = 0
+    var width: Int = 1
+    var height: Int = 1
+    var colorHex: String = "#8B5E3C"
     var mapArea: MapArea?
 
     @Relationship(deleteRule: .cascade, inverse: \PlacedPlant.bed)

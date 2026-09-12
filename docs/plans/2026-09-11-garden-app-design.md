@@ -91,16 +91,20 @@ list (2 per month) tuned to a central/southern Swedish growing season. See
 
 ## Testing approach
 
-- Model/logic unit tests (e.g. `PlantSpecies.isGoodToPlant`, seed
-  idempotency) via Swift Testing or XCTest, once Xcode is available to run
-  them — not yet written in this scaffold.
-- UI is verified manually in the simulator/on-device; no UI automation
-  harness, which is appropriate for a 2-person personal app.
-- This design was written and the full source scaffolded without access to
-  Xcode in the working environment (Command Line Tools only) — see the
-  "Environment note" in `CLAUDE.md`. The code was type-checked as far as
-  possible without the SwiftData macro plugin, but a real build has not
-  been verified yet. That's the first thing to do once Xcode is installed.
+- `GardenAppUITests` (added 2026-09-12, once Xcode became available) is a
+  smoke test covering the main navigation: Garden tab renders, tapping the
+  greenhouse structure pushes into its own map, the back button returns to
+  Garden, and Calendar/Wiki tabs load with seeded content visible. Run via
+  `xcodebuild test -project GardenApp.xcodeproj -scheme GardenApp
+  -destination 'platform=iOS Simulator,name=<a simulator>'`.
+- Confirmed passing on iOS 26.5 Simulator (iPhone 17 Pro) on 2026-09-12,
+  after fixing two real bugs the first build surfaced — see
+  [0008](../decisions/0008-cloudkit-fallback.md) and
+  [0009](../decisions/0009-cloudkit-attribute-defaults.md). Not yet run on
+  a physical device.
+- No model/logic unit tests yet (e.g. `PlantSpecies.isGoodToPlant`, seed
+  idempotency) — worth adding, not blocking since the UI test already
+  exercises the seeded data through the real persistence stack.
 
 ## Known gaps / not yet built (v2 candidates)
 
@@ -114,7 +118,7 @@ list (2 per month) tuned to a central/southern Swedish growing season. See
 - No auto-generated "your placed plants suggest doing X" beyond the
   planting/harvest month cross-reference already in the Calendar tab.
 - No photos attached to placed plants or wiki entries.
-- No unit tests yet (blocked on Xcode being available to run them).
+- No model/logic unit tests yet — only the one UI smoke test exists so far.
 - UI chrome (tab labels, category names like "Vegetable"/"Herb") is still
   English even though plant names and seed content are Swedish — full
   Swedish localization hasn't been requested yet.

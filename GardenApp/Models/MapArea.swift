@@ -6,13 +6,13 @@ import SwiftData
 /// the same GardenMapView, parameterized by this model.
 @Model
 final class MapArea: Identifiable {
-    var id: UUID
-    var name: String
-    var kindRaw: String
+    var id: UUID = UUID()
+    var name: String = ""
+    var kindRaw: String = MapAreaKind.outdoor.rawValue
     /// Size of the map in grid cells (columns x rows). Kept small and fixed
     /// for v1 so the canvas fits comfortably on an iPhone screen.
-    var columns: Int
-    var rows: Int
+    var columns: Int = 10
+    var rows: Int = 14
 
     @Relationship(deleteRule: .cascade, inverse: \Bed.mapArea)
     var beds: [Bed]? = []

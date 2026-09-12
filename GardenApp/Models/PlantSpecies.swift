@@ -6,30 +6,30 @@ import SwiftData
 /// plant that has actually been placed on the map.
 @Model
 final class PlantSpecies: Identifiable {
-    var id: UUID
-    var commonName: String
+    var id: UUID = UUID()
+    var commonName: String = ""
     var scientificName: String?
-    var categoryRaw: String
-    var sunRequirementRaw: String
-    var waterRequirementRaw: String
-    var isTree: Bool
+    var categoryRaw: String = PlantCategory.other.rawValue
+    var sunRequirementRaw: String = SunRequirement.fullSun.rawValue
+    var waterRequirementRaw: String = WaterRequirement.medium.rawValue
+    var isTree: Bool = false
 
     /// Freeform care instructions (watering, pruning, feeding, winter care, etc.)
-    var careNotes: String
-    var soilNotes: String
-    var spacingNotes: String
+    var careNotes: String = ""
+    var soilNotes: String = ""
+    var spacingNotes: String = ""
 
     /// Months (1-12) that are good for planting this species outdoors.
-    var plantingMonths: [Int]
+    var plantingMonths: [Int] = []
     /// Months (1-12) when this species is typically harvested or blooms.
-    var harvestMonths: [Int]
+    var harvestMonths: [Int] = []
 
     /// SF Symbol name used to render this species on the map and in lists.
-    var symbolName: String
+    var symbolName: String = "leaf.fill"
     /// Hex color (e.g. "#3A7D44") used as a tint for the species' marker.
-    var colorHex: String
+    var colorHex: String = "#3A7D44"
 
-    var createdAt: Date
+    var createdAt: Date = Date.now
 
     @Relationship(deleteRule: .nullify, inverse: \PlacedPlant.species)
     var placements: [PlacedPlant]? = []

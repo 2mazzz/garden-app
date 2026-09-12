@@ -15,3 +15,5 @@ in both files.
 | [0005](0005-free-provisioning.md) | Free Apple ID provisioning instead of paid developer account |
 | [0006](0006-garden-home-with-structures.md) | Garden overview as the home screen; greenhouse is an enterable structure |
 | [0007](0007-sweden-focus.md) | Focus on Sweden and Swedish climate |
+| [0008](0008-cloudkit-fallback.md) | Fall back to local storage if the CloudKit container isn't provisioned |
+| [0009](0009-cloudkit-attribute-defaults.md) | Every SwiftData attribute needs a default value at the property declaration |

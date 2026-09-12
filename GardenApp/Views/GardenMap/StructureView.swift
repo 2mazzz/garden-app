@@ -14,10 +14,13 @@ struct StructureView: View {
                 VStack(spacing: 2) {
                     Image(systemName: structure.symbolName)
                         .font(.title3)
+                        .accessibilityHidden(true)
                     Text(structure.name)
                         .font(.caption2.bold())
                 }
                 .foregroundStyle(.primary)
             }
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel(structure.name)
     }
 }
