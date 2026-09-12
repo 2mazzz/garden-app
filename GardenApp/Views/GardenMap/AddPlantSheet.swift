@@ -9,6 +9,7 @@ struct AddPlantSheet: View {
 
     let mapArea: MapArea
     let defaultPoint: GridPoint?
+    var defaultBed: Bed? = nil
 
     @State private var selectedSpecies: PlantSpecies?
     @State private var x = 0
@@ -77,9 +78,29 @@ struct AddPlantSheet: View {
                 if let point = defaultPoint {
                     x = point.x
                     y = point.y
+                } else if let defaultBed {
+                    let freeCell = firstFreeCell(in: defaultBed) ?? GridPoint(x: defaultBed.x, y: defaultBed.y)
+                    x = freeCell.x
+                    y = freeCell.y
+                }
+                selectedBed = defaultBed
+            }
+        }
+    }
+
+    /// Scans a bed's rectangle for the first cell with no plant already in
+    /// it, so the "add plant to this bed" shortcut doesn't default on top
+    /// of an existing plant.
+    private func firstFreeCell(in bed: Bed) -> GridPoint? {
+        let occupied = Set((mapArea.placedPlants ?? []).map { GridPoint(x: $0.x, y: $0.y) })
+        for row in bed.y..<(bed.y + bed.height) {
+            for col in bed.x..<(bed.x + bed.width) {
+                if !occupied.contains(GridPoint(x: col, y: row)) {
+                    return GridPoint(x: col, y: row)
                 }
             }
         }
+        return nil
     }
 
     private func addPlant() {

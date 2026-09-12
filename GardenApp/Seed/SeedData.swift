@@ -109,7 +109,7 @@ enum SeedData {
                 spacingNotes: "1m mellan plantor, den breder ut sig.",
                 plantingMonths: [4, 5],
                 harvestMonths: [5, 6, 7],
-                symbolName: "carrot.fill",
+                symbolName: "leaf.fill",
                 colorHex: "#C23C4C"
             ),
             PlantSpecies(
@@ -165,7 +165,7 @@ enum SeedData {
                 spacingNotes: "30cm mellan plantor.",
                 plantingMonths: [5, 8],
                 harvestMonths: [7],
-                symbolName: "applelogo",
+                symbolName: "circle.fill",
                 colorHex: "#C23C4C"
             ),
             PlantSpecies(
@@ -179,7 +179,7 @@ enum SeedData {
                 spacingNotes: "1.2-1.5m mellan buskar.",
                 plantingMonths: [4, 10],
                 harvestMonths: [7, 8],
-                symbolName: "tree.fill",
+                symbolName: "circle.fill",
                 colorHex: "#3E3E5C"
             ),
             PlantSpecies(
@@ -193,7 +193,7 @@ enum SeedData {
                 spacingNotes: "1.2m mellan buskar.",
                 plantingMonths: [4, 10],
                 harvestMonths: [7, 8],
-                symbolName: "tree.fill",
+                symbolName: "circle.fill",
                 colorHex: "#7A9A4E"
             ),
             PlantSpecies(
@@ -237,7 +237,7 @@ enum SeedData {
                 spacingNotes: "2-3m mellan buskar om de ska bilda häck.",
                 plantingMonths: [4, 9],
                 harvestMonths: [5, 6],
-                symbolName: "leaf.fill",
+                symbolName: "tree",
                 colorHex: "#8B7CC2"
             ),
             PlantSpecies(

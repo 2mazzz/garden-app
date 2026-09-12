@@ -18,7 +18,10 @@ final class Bed: Identifiable {
     var colorHex: String = "#8B5E3C"
     var mapArea: MapArea?
 
-    @Relationship(deleteRule: .cascade, inverse: \PlacedPlant.bed)
+    // .nullify, not .cascade: deleting a bed should just detach the plants
+    // inside it (they keep their map position and stay visible), not
+    // delete them along with the bed.
+    @Relationship(deleteRule: .nullify, inverse: \PlacedPlant.bed)
     var placedPlants: [PlacedPlant]? = []
 
     init(
@@ -39,5 +42,9 @@ final class Bed: Identifiable {
         self.height = height
         self.colorHex = colorHex
         self.mapArea = mapArea
+    }
+
+    func occupies(x: Int, y: Int) -> Bool {
+        x >= self.x && x < self.x + width && y >= self.y && y < self.y + height
     }
 }

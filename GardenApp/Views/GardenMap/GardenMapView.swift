@@ -12,12 +12,13 @@ let mapCellSize: CGFloat = 32
 /// RootTabView) rather than providing its own, so that entering a linked
 /// structure (garden -> greenhouse) is a normal push, not a new stack.
 struct GardenMapView: View {
+    @Environment(\.modelContext) private var modelContext
     @Bindable var mapArea: MapArea
 
-    @State private var isAddingBed = false
     @State private var isAddingPlant = false
     @State private var prefilledPoint: GridPoint?
     @State private var selectedPlacedPlant: PlacedPlant?
+    @State private var selectedBed: Bed?
 
     private var beds: [Bed] { mapArea.beds ?? [] }
     private var placedPlants: [PlacedPlant] { mapArea.placedPlants ?? [] }
@@ -29,12 +30,7 @@ struct GardenMapView: View {
                 gridBackground
 
                 ForEach(beds) { bed in
-                    BedView(bed: bed)
-                        .frame(width: CGFloat(bed.width) * mapCellSize, height: CGFloat(bed.height) * mapCellSize)
-                        .position(
-                            x: (CGFloat(bed.x) + CGFloat(bed.width) / 2) * mapCellSize,
-                            y: (CGFloat(bed.y) + CGFloat(bed.height) / 2) * mapCellSize
-                        )
+                    BedView(bed: bed, mapArea: mapArea) { selectedBed = bed }
                 }
 
                 ForEach(structures) { structure in
@@ -72,7 +68,7 @@ struct GardenMapView: View {
         .toolbar {
             ToolbarItemGroup(placement: .navigationBarTrailing) {
                 Button {
-                    isAddingBed = true
+                    addBed()
                 } label: {
                     Label("Add Bed", systemImage: "square.dashed")
                 }
@@ -84,25 +80,41 @@ struct GardenMapView: View {
                 }
             }
         }
-        .sheet(isPresented: $isAddingBed) {
-            AddBedSheet(mapArea: mapArea)
-        }
         .sheet(isPresented: $isAddingPlant) {
             AddPlantSheet(mapArea: mapArea, defaultPoint: prefilledPoint)
         }
         .sheet(item: $selectedPlacedPlant) { plant in
             PlacedPlantDetailSheet(placedPlant: plant)
         }
+        .sheet(item: $selectedBed) { bed in
+            BedDetailSheet(bed: bed, mapArea: mapArea)
+        }
+    }
+
+    /// No popup — a new bed is created immediately with sensible defaults
+    /// at the top-left of the map. Rename, recolor, resize (drag the
+    /// corner handle), reposition (drag the bed), or delete it afterward.
+    private func addBed() {
+        let bed = Bed(
+            name: "New bed",
+            x: 0,
+            y: 0,
+            width: min(2, mapArea.columns),
+            height: min(2, mapArea.rows),
+            mapArea: mapArea
+        )
+        modelContext.insert(bed)
     }
 
     /// Invisible tap targets over every empty, unoccupied cell, so tapping
     /// open space on the map is a shortcut to placing a plant there. Cells
-    /// under a structure (e.g. the greenhouse building) are excluded so
-    /// they don't shadow the structure's own tap target.
+    /// under a structure or a bed are excluded — a bed's own drag gestures
+    /// need the whole rectangle free to move/resize it, and planting into a
+    /// bed goes through its "Add a plant to this bed" menu action instead.
     private var emptyCellTapTargets: some View {
         ForEach(0..<mapArea.rows, id: \.self) { row in
             ForEach(0..<mapArea.columns, id: \.self) { col in
-                if placedPlant(atX: col, y: row) == nil && !isOccupiedByStructure(x: col, y: row) {
+                if placedPlant(atX: col, y: row) == nil && !isBlockedForDirectPlacement(x: col, y: row) {
                     Color.clear
                         .frame(width: mapCellSize, height: mapCellSize)
                         .contentShape(Rectangle())
@@ -123,8 +135,8 @@ struct GardenMapView: View {
         placedPlants.first { $0.x == x && $0.y == y }
     }
 
-    private func isOccupiedByStructure(x: Int, y: Int) -> Bool {
-        structures.contains { $0.occupies(x: x, y: y) }
+    private func isBlockedForDirectPlacement(x: Int, y: Int) -> Bool {
+        structures.contains { $0.occupies(x: x, y: y) } || beds.contains { $0.occupies(x: x, y: y) }
     }
 
     private var gridBackground: some View {
@@ -151,7 +163,7 @@ struct GardenMapView: View {
     }
 }
 
-struct GridPoint {
+struct GridPoint: Hashable {
     let x: Int
     let y: Int
 }

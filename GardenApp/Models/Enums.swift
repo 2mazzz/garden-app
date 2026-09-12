@@ -14,9 +14,13 @@ enum PlantCategory: String, Codable, CaseIterable, Identifiable {
         case .vegetable: return "carrot.fill"
         case .herb: return "leaf.fill"
         case .flower: return "camera.macro"
-        case .shrub: return "tree.fill"
+        case .shrub: return "tree"
         case .tree: return "tree.fill"
-        case .fruit: return "applelogo"
+        // No real "fruit" SF Symbol exists — "applelogo" (Apple's own
+        // trademark) was wrong here, not just a poor fit. A plain filled
+        // dot, tinted with the species' own color, reads fine for a berry
+        // bush without claiming to be something it isn't.
+        case .fruit: return "circle.fill"
         case .other: return "questionmark.circle.fill"
         }
     }
