@@ -1,5 +1,9 @@
 # 0013 — Three switchable "gardeny" visual themes
 
+**Superseded by [0018](0018-greenhouse-design-system.md)**, which replaces
+the three switchable themes with one fixed "Greenhouse" design system from
+a high-fidelity design handoff. Kept here for history.
+
 ## Context
 
 The app had no visual identity beyond stock SwiftUI system colors/fonts

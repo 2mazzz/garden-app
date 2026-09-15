@@ -20,8 +20,9 @@ in both files.
 | [0010](0010-direct-manipulation-beds.md) | Direct-manipulation bed editing (drag to move/resize) instead of a form popup |
 | [0011](0011-structure-direct-manipulation.md) | Extend direct manipulation to structures; generic house/driveway/shed presets |
 | [0012](0012-garden-scale-and-zoom.md) | Pinch-to-zoom and an in-app garden size control |
-| [0013](0013-theme-system.md) | Three switchable "gardeny" visual themes |
+| [0013](0013-theme-system.md) | Three switchable "gardeny" visual themes (superseded by 0018) |
 | [0014](0014-endless-grid.md) | A large, centered grid instead of a small fixed one ("endless" scrolling) |
 | [0015](0015-weather-data-source.md) | SMHI open data API instead of WeatherKit (avoids paid Apple Developer Program) |
 | [0016](0016-additive-species-seeding.md) | Additive, per-species wiki seeding instead of empty-catalog gating |
 | [0017](0017-bed-shapes-and-plant-zones.md) | Triangle beds and resizable plant footprints/zones instead of point icons |
+| [0018](0018-greenhouse-design-system.md) | Adopt the "Greenhouse" design system as a fixed static theme; keep the freeform map instead of the handoff's fixed plot-tile grid (supersedes 0013) |
