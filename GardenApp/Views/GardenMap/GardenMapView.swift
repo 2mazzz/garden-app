@@ -67,8 +67,6 @@ struct GardenMapView: View {
                     }
                 }
 
-                emptyCellTapTargets
-
                 ForEach(placedPlants) { plant in
                     PlacedPlantView(placedPlant: plant)
                         .frame(width: mapCellSize, height: mapCellSize)
@@ -85,6 +83,7 @@ struct GardenMapView: View {
             .frame(width: unscaledWidth * zoomScale, height: unscaledHeight * zoomScale, alignment: .topLeading)
             .padding()
         }
+        .defaultScrollAnchor(.center)
         .background(theme.backgroundColor)
         .gesture(magnificationGesture)
         .overlay(alignment: .bottomLeading) { scaleLegend }
@@ -130,51 +129,59 @@ struct GardenMapView: View {
     }
 
     /// No popup — a new bed is created immediately with sensible defaults
-    /// at the top-left of the map. Rename, recolor, resize (drag the
-    /// corner handle), reposition (drag the bed), or delete it afterward.
+    /// near the center of the map (where the view is already scrolled to,
+    /// not off in a far corner of the large grid — see
+    /// docs/decisions/0014-endless-grid.md). Rename, recolor, resize (drag
+    /// the corner handle), reposition (drag the bed), or delete it after.
     private func addBed() {
+        let width = min(2, mapArea.columns)
+        let height = min(2, mapArea.rows)
+        let origin = centeredOrigin(width: width, height: height)
         let bed = Bed(
             name: "New bed",
-            x: 0,
-            y: 0,
-            width: min(2, mapArea.columns),
-            height: min(2, mapArea.rows),
+            x: origin.x,
+            y: origin.y,
+            width: width,
+            height: height,
             mapArea: mapArea
         )
         modelContext.insert(bed)
     }
 
-    /// Invisible tap targets over every empty, unoccupied cell, so tapping
-    /// open space on the map is a shortcut to placing a plant there. Cells
-    /// under a structure or a bed are excluded — a bed's own drag gestures
-    /// need the whole rectangle free to move/resize it, and planting into a
-    /// bed goes through its "Add a plant to this bed" menu action instead.
-    private var emptyCellTapTargets: some View {
-        ForEach(0..<mapArea.rows, id: \.self) { row in
-            ForEach(0..<mapArea.columns, id: \.self) { col in
-                if placedPlant(atX: col, y: row) == nil && !isBlockedForDirectPlacement(x: col, y: row) {
-                    Color.clear
-                        .frame(width: mapCellSize, height: mapCellSize)
-                        .contentShape(Rectangle())
-                        .position(
-                            x: (CGFloat(col) + 0.5) * mapCellSize,
-                            y: (CGFloat(row) + 0.5) * mapCellSize
-                        )
-                        .onTapGesture {
-                            prefilledPoint = GridPoint(x: col, y: row)
-                            isAddingPlant = true
-                        }
-                }
+    /// A top-left origin for a new width x height item so it lands near
+    /// the middle of the map instead of grid (0,0), which — now that the
+    /// grid is large and the seeded layout sits centered within it — is
+    /// usually off-screen.
+    private func centeredOrigin(width: Int, height: Int) -> (x: Int, y: Int) {
+        let x = max(0, min(mapArea.columns - width, mapArea.columns / 2 - width / 2))
+        let y = max(0, min(mapArea.rows - height, mapArea.rows / 2 - height / 2))
+        return (x, y)
+    }
+
+    /// Tapping empty space on the map is a shortcut to placing a plant
+    /// there. This is a single gesture on the background grid rather than
+    /// one invisible view per empty cell — with a grid that can now run to
+    /// hundreds of cells per side (see docs/decisions/0014-endless-grid.md),
+    /// per-cell views stopped scaling. Beds/structures/plants sit above the
+    /// background and have their own gestures, so a tap only reaches this
+    /// one when it lands on genuinely empty space.
+    ///
+    /// This must be a real tap gesture (SpatialTapGesture), not a
+    /// DragGesture(minimumDistance: 0) — a drag gesture claims the touch
+    /// the instant a finger goes down, before the ScrollView's own pan
+    /// gesture can recognize a scroll, so panning the map broke entirely
+    /// (every drag was read as "add a plant at wherever you lifted your
+    /// finger"). A tap gesture only fires on a genuine tap and lets any
+    /// real drag fall through to the ScrollView to pan as normal.
+    private var backgroundTapGesture: some Gesture {
+        SpatialTapGesture()
+            .onEnded { value in
+                let col = Int(value.location.x / mapCellSize)
+                let row = Int(value.location.y / mapCellSize)
+                guard col >= 0, col < mapArea.columns, row >= 0, row < mapArea.rows else { return }
+                prefilledPoint = GridPoint(x: col, y: row)
+                isAddingPlant = true
             }
-        }
-    }
-
-    private func placedPlant(atX x: Int, y: Int) -> PlacedPlant? {
-        placedPlants.first { $0.x == x && $0.y == y }
-    }
-
-    private func isBlockedForDirectPlacement(x: Int, y: Int) -> Bool {
-        structures.contains { $0.occupies(x: x, y: y) } || beds.contains { $0.occupies(x: x, y: y) }
     }
 
     private var gridBackground: some View {
@@ -202,6 +209,8 @@ struct GardenMapView: View {
             width: CGFloat(mapArea.columns) * mapCellSize,
             height: CGFloat(mapArea.rows) * mapCellSize
         )
+        .contentShape(Rectangle())
+        .gesture(backgroundTapGesture)
     }
 
     /// Pinch to zoom in/out on the canvas. The committed/live split mirrors

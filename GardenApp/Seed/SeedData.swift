@@ -24,17 +24,21 @@ enum SeedData {
         let existing = (try? context.fetch(descriptor)) ?? []
         guard existing.isEmpty else { return }
 
-        let garden = MapArea(name: "Garden", kind: .outdoor, columns: 10, rows: 14)
-        let greenhouse = MapArea(name: "Greenhouse", kind: .greenhouse, columns: 6, rows: 8)
+        // The grid is a large, mostly-empty canvas you scroll around in
+        // every direction (see docs/decisions/0014-endless-grid.md) — the
+        // starter layout below is positioned using the same offset that
+        // centers it, so a fresh install looks identical to a migrated one.
+        let garden = MapArea(name: "Garden", kind: .outdoor, columns: GardenGridDefaults.size, rows: GardenGridDefaults.size)
+        let greenhouse = MapArea(name: "Greenhouse", kind: .greenhouse, columns: GardenGridDefaults.size, rows: GardenGridDefaults.size)
         context.insert(garden)
         context.insert(greenhouse)
 
-        // Placed near a corner of the garden so it doesn't overlap the
-        // default empty space where beds usually go.
+        // Placed near a corner of the (legacy-sized) starter layout so it
+        // doesn't overlap the default empty space where beds usually go.
         let greenhouseStructure = Structure(
             name: "Greenhouse",
-            x: 7,
-            y: 0,
+            x: 7 + GardenGridDefaults.outdoorOffsetX,
+            y: 0 + GardenGridDefaults.outdoorOffsetY,
             width: 3,
             height: 3,
             colorHex: "#6B8CA3",

@@ -78,13 +78,13 @@ struct SettingsView: View {
             Stepper(value: Binding(
                 get: { area.columns },
                 set: { area.resize(toColumns: $0, rows: area.rows) }
-            ), in: 4...40, step: 2) {
+            ), in: 4...400, step: 5) {
                 Text("Width: \(area.columns) cells (~\(metersLabel(for: area.columns))m)")
             }
             Stepper(value: Binding(
                 get: { area.rows },
                 set: { area.resize(toColumns: area.columns, rows: $0) }
-            ), in: 4...40, step: 2) {
+            ), in: 4...400, step: 5) {
                 Text("Height: \(area.rows) cells (~\(metersLabel(for: area.rows))m)")
             }
         }

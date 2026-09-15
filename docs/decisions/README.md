@@ -21,3 +21,4 @@ in both files.
 | [0011](0011-structure-direct-manipulation.md) | Extend direct manipulation to structures; generic house/driveway/shed presets |
 | [0012](0012-garden-scale-and-zoom.md) | Pinch-to-zoom and an in-app garden size control |
 | [0013](0013-theme-system.md) | Three switchable "gardeny" visual themes |
+| [0014](0014-endless-grid.md) | A large, centered grid instead of a small fixed one ("endless" scrolling) |

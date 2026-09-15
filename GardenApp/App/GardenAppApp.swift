@@ -45,6 +45,8 @@ struct GardenAppApp: App {
         }
 
         SeedData.populateIfNeeded(in: modelContainer.mainContext)
+        GridSizeMigration.migrateIfNeeded(in: modelContainer.mainContext)
+        try? modelContainer.mainContext.save()
     }
 
     var body: some Scene {
