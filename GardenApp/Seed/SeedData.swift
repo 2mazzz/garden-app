@@ -49,12 +49,17 @@ enum SeedData {
         context.insert(greenhouseStructure)
     }
 
+    /// Additive by `commonName`, not gated on the catalog being empty — see
+    /// docs/decisions/0016-additive-species-seeding.md. This lets new
+    /// entries added to `starterSpecies` after first launch (e.g. via the
+    /// adding-a-new-plant skill) reach devices that were already seeded,
+    /// on their next launch, without duplicating species they already have.
     private static func seedSpeciesIfNeeded(in context: ModelContext) {
         let descriptor = FetchDescriptor<PlantSpecies>()
         let existing = (try? context.fetch(descriptor)) ?? []
-        guard existing.isEmpty else { return }
+        let existingNames = Set(existing.map(\.commonName))
 
-        for species in starterSpecies {
+        for species in starterSpecies where !existingNames.contains(species.commonName) {
             context.insert(species)
         }
     }
