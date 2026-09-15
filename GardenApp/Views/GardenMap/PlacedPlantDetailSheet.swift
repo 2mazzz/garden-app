@@ -6,6 +6,11 @@ struct PlacedPlantDetailSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     @Bindable var placedPlant: PlacedPlant
+    @State private var showingLogHarvest = false
+
+    private var sortedHarvestLogs: [HarvestLog] {
+        (placedPlant.harvestLogs ?? []).sorted { $0.date > $1.date }
+    }
 
     var body: some View {
         NavigationStack {
@@ -40,6 +45,25 @@ struct PlacedPlantDetailSheet: View {
                 }
 
                 Section {
+                    ForEach(sortedHarvestLogs) { log in
+                        HStack {
+                            Text(log.date, style: .date)
+                            Spacer()
+                            if let quantity = log.quantity {
+                                Text("\(formatted(quantity)) \(log.unit)")
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                    .onDelete(perform: deleteHarvestLogs)
+                    Button("Log harvest") {
+                        showingLogHarvest = true
+                    }
+                } header: {
+                    Text("Harvest log")
+                }
+
+                Section {
                     Button("Remove from map", role: .destructive) {
                         modelContext.delete(placedPlant)
                         dismiss()
@@ -52,6 +76,21 @@ struct PlacedPlantDetailSheet: View {
                     Button("Done") { dismiss() }
                 }
             }
+            .sheet(isPresented: $showingLogHarvest) {
+                LogHarvestSheet(placedPlant: placedPlant)
+            }
         }
+    }
+
+    private func deleteHarvestLogs(at offsets: IndexSet) {
+        for index in offsets {
+            modelContext.delete(sortedHarvestLogs[index])
+        }
+    }
+
+    private func formatted(_ value: Double) -> String {
+        value.truncatingRemainder(dividingBy: 1) == 0
+            ? String(format: "%.0f", value)
+            : String(format: "%.1f", value)
     }
 }

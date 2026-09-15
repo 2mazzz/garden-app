@@ -19,6 +19,9 @@ final class PlacedPlant: Identifiable {
     var datePlanted: Date?
     var notes: String = ""
 
+    @Relationship(deleteRule: .cascade, inverse: \HarvestLog.placedPlant)
+    var harvestLogs: [HarvestLog]? = []
+
     init(
         id: UUID = UUID(),
         species: PlantSpecies?,
