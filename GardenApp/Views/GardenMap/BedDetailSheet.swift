@@ -36,7 +36,9 @@ struct BedDetailSheet: View {
                 }
 
                 Section {
-                    Text("Drag the bed on the map to move it. Drag the corner handle to resize it.")
+                    Text(bed.shape == .triangle
+                        ? "Drag inside the triangle to move it. Drag any corner dot to reshape it."
+                        : "Drag the bed on the map to move it. Drag the corner handle to resize it.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }

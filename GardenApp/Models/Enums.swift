@@ -83,6 +83,14 @@ enum TaskCategory: String, Codable, CaseIterable, Identifiable {
     }
 }
 
+enum BedShape: String, Codable, CaseIterable, Identifiable {
+    case rectangle, triangle
+
+    var id: String { rawValue }
+
+    var displayName: String { rawValue.capitalized }
+}
+
 enum MapAreaKind: String, Codable, CaseIterable, Identifiable {
     case outdoor, greenhouse
 

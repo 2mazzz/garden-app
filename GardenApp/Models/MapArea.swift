@@ -57,10 +57,24 @@ final class MapArea: Identifiable {
         self.rows = rows
 
         for bed in beds ?? [] {
-            bed.width = min(bed.width, columns)
-            bed.height = min(bed.height, rows)
-            bed.x = min(bed.x, max(0, columns - bed.width))
-            bed.y = min(bed.y, max(0, rows - bed.height))
+            switch bed.shape {
+            case .rectangle:
+                bed.width = min(bed.width, columns)
+                bed.height = min(bed.height, rows)
+                bed.x = min(bed.x, max(0, columns - bed.width))
+                bed.y = min(bed.y, max(0, rows - bed.height))
+            case .triangle:
+                // A triangle isn't shrunk (there's no well-defined way to
+                // "shrink" 3 independent vertices) — it's just shifted back
+                // inside the new bounds if it now overflows them.
+                let box = bed.boundingBox
+                var dx = 0, dy = 0
+                if box.x + box.width > columns { dx = columns - (box.x + box.width) }
+                if box.x + dx < 0 { dx = -box.x }
+                if box.y + box.height > rows { dy = rows - (box.y + box.height) }
+                if box.y + dy < 0 { dy = -box.y }
+                if dx != 0 || dy != 0 { bed.translateVertices(dx: dx, dy: dy) }
+            }
         }
         for structure in structures ?? [] {
             structure.width = min(structure.width, columns)
@@ -69,8 +83,10 @@ final class MapArea: Identifiable {
             structure.y = min(structure.y, max(0, rows - structure.height))
         }
         for plant in placedPlants ?? [] {
-            plant.x = min(plant.x, max(0, columns - 1))
-            plant.y = min(plant.y, max(0, rows - 1))
+            plant.width = min(plant.width, columns)
+            plant.height = min(plant.height, rows)
+            plant.x = min(plant.x, max(0, columns - plant.width))
+            plant.y = min(plant.y, max(0, rows - plant.height))
         }
     }
 }

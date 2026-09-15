@@ -1,9 +1,12 @@
 import SwiftUI
 
-/// A draggable, resizable bed rectangle. Dragging the body moves the bed
-/// (snapped to the grid); dragging the corner handle resizes it. A tap
+/// A draggable, resizable bed. Rectangle beds: dragging the body moves the
+/// bed (snapped to the grid); dragging the corner handle resizes it.
+/// Triangle beds: dragging the body moves all 3 vertices together;
+/// dragging any vertex dot reshapes it independently. Either way, a tap
 /// with negligible movement opens the compact edit menu instead of
-/// committing a move — see docs/decisions/0010-direct-manipulation-beds.md.
+/// committing a move — see docs/decisions/0010-direct-manipulation-beds.md
+/// and docs/decisions/0017-bed-shapes-and-plant-zones.md.
 struct BedView: View {
     let bed: Bed
     let mapArea: MapArea
@@ -11,10 +14,28 @@ struct BedView: View {
 
     @Environment(\.gardenTheme) private var theme
 
+    // Rectangle drag/resize state.
     @State private var dragTranslation: CGSize = .zero
     @State private var isDragging = false
     @State private var resizeTranslation: CGSize = .zero
     @State private var isResizing = false
+
+    // Triangle drag/reshape state.
+    @State private var isDraggingBody = false
+    @State private var bodyDragTranslation: CGSize = .zero
+    @State private var draggingVertexIndex: Int?
+    @State private var vertexDragTranslation: CGSize = .zero
+
+    var body: some View {
+        switch bed.shape {
+        case .rectangle:
+            rectangleBody
+        case .triangle:
+            triangleBody
+        }
+    }
+
+    // MARK: - Rectangle
 
     private var committedWidth: CGFloat { CGFloat(bed.width) * mapCellSize }
     private var committedHeight: CGFloat { CGFloat(bed.height) * mapCellSize }
@@ -39,7 +60,7 @@ struct BedView: View {
         CGFloat(bed.y) * mapCellSize + (isDragging ? dragTranslation.height : 0)
     }
 
-    var body: some View {
+    private var rectangleBody: some View {
         ZStack(alignment: .bottomTrailing) {
             RoundedRectangle(cornerRadius: theme.bedCornerRadius)
                 .fill(Color(hex: bed.colorHex).opacity(theme.bedFillOpacity))
@@ -118,6 +139,118 @@ struct BedView: View {
                 bed.width = clamp(bed.width + deltaW, 1, max(1, mapArea.columns - bed.x))
                 bed.height = clamp(bed.height + deltaH, 1, max(1, mapArea.rows - bed.y))
                 resizeTranslation = .zero
+            }
+    }
+
+    // MARK: - Triangle
+
+    private var canvasWidth: CGFloat { CGFloat(mapArea.columns) * mapCellSize }
+    private var canvasHeight: CGFloat { CGFloat(mapArea.rows) * mapCellSize }
+
+    private func liveVertexPoint(_ index: Int) -> CGPoint {
+        let v = bed.vertex(at: index)
+        var point = CGPoint(x: CGFloat(v.x) * mapCellSize, y: CGFloat(v.y) * mapCellSize)
+        if isDraggingBody {
+            point.x += bodyDragTranslation.width
+            point.y += bodyDragTranslation.height
+        }
+        if draggingVertexIndex == index {
+            point.x += vertexDragTranslation.width
+            point.y += vertexDragTranslation.height
+        }
+        return point
+    }
+
+    private var trianglePath: Path {
+        var path = Path()
+        let points = (0..<3).map { liveVertexPoint($0) }
+        path.move(to: points[0])
+        path.addLine(to: points[1])
+        path.addLine(to: points[2])
+        path.closeSubpath()
+        return path
+    }
+
+    private var triangleCentroid: CGPoint {
+        let points = (0..<3).map { liveVertexPoint($0) }
+        return CGPoint(x: points.reduce(0) { $0 + $1.x } / 3, y: points.reduce(0) { $0 + $1.y } / 3)
+    }
+
+    private var triangleBody: some View {
+        ZStack(alignment: .topLeading) {
+            trianglePath
+                .fill(Color(hex: bed.colorHex).opacity(theme.bedFillOpacity))
+            trianglePath
+                .stroke(
+                    Color(hex: bed.colorHex),
+                    lineWidth: (isDraggingBody || draggingVertexIndex != nil) ? theme.bedBorderWidth + 1.5 : theme.bedBorderWidth
+                )
+            Text(bed.name)
+                .font(theme.labelFont)
+                .foregroundStyle(.secondary)
+                .position(triangleCentroid)
+
+            ForEach(0..<3, id: \.self) { index in
+                Circle()
+                    .fill(Color(hex: bed.colorHex))
+                    .overlay(Circle().stroke(.white, lineWidth: 1.5))
+                    .frame(width: 14, height: 14)
+                    .position(liveVertexPoint(index))
+                    .gesture(vertexDragGesture(index))
+            }
+        }
+        .contentShape(trianglePath)
+        .gesture(moveTriangleGesture)
+        .frame(width: canvasWidth, height: canvasHeight, alignment: .topLeading)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(bed.name)
+        .accessibilityAddTraits(.isButton)
+        .accessibilityHint("Double tap to edit. Drag inside to move, drag a corner dot to reshape.")
+    }
+
+    /// Moves all 3 vertices together, clamped so the bounding box stays on
+    /// the map — same tap/drag disambiguation as the rectangle case.
+    private var moveTriangleGesture: some Gesture {
+        DragGesture(minimumDistance: 0)
+            .onChanged { value in
+                isDraggingBody = true
+                bodyDragTranslation = value.translation
+            }
+            .onEnded { value in
+                isDraggingBody = false
+                let distance = hypot(value.translation.width, value.translation.height)
+                guard distance >= 6 else {
+                    bodyDragTranslation = .zero
+                    onTap()
+                    return
+                }
+                var deltaX = Int((value.translation.width / mapCellSize).rounded())
+                var deltaY = Int((value.translation.height / mapCellSize).rounded())
+                let box = bed.boundingBox
+                deltaX = clamp(deltaX, -box.x, max(0, mapArea.columns - box.x - box.width))
+                deltaY = clamp(deltaY, -box.y, max(0, mapArea.rows - box.y - box.height))
+                bed.translateVertices(dx: deltaX, dy: deltaY)
+                bodyDragTranslation = .zero
+            }
+    }
+
+    /// Reshapes the triangle by moving a single vertex independently —
+    /// same named-coordinate-space rationale as the rectangle resize handle.
+    private func vertexDragGesture(_ index: Int) -> some Gesture {
+        DragGesture(minimumDistance: 2, coordinateSpace: .named(mapCanvasCoordinateSpace))
+            .onChanged { value in
+                draggingVertexIndex = index
+                vertexDragTranslation = value.translation
+            }
+            .onEnded { value in
+                draggingVertexIndex = nil
+                let deltaX = Int((value.translation.width / mapCellSize).rounded())
+                let deltaY = Int((value.translation.height / mapCellSize).rounded())
+                let current = bed.vertex(at: index)
+                let newX = clamp(current.x + deltaX, 0, max(0, mapArea.columns - 1))
+                let newY = clamp(current.y + deltaY, 0, max(0, mapArea.rows - 1))
+                bed.setVertex(index, x: newX, y: newY)
+                vertexDragTranslation = .zero
             }
     }
 

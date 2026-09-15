@@ -68,13 +68,7 @@ struct GardenMapView: View {
                 }
 
                 ForEach(placedPlants) { plant in
-                    PlacedPlantView(placedPlant: plant)
-                        .frame(width: mapCellSize, height: mapCellSize)
-                        .position(
-                            x: (CGFloat(plant.x) + 0.5) * mapCellSize,
-                            y: (CGFloat(plant.y) + 0.5) * mapCellSize
-                        )
-                        .onTapGesture { selectedPlacedPlant = plant }
+                    PlacedPlantView(placedPlant: plant, mapArea: mapArea) { selectedPlacedPlant = plant }
                 }
             }
             .frame(width: unscaledWidth, height: unscaledHeight)
@@ -93,8 +87,9 @@ struct GardenMapView: View {
         }
         .toolbar {
             ToolbarItemGroup(placement: .navigationBarTrailing) {
-                Button {
-                    addBed()
+                Menu {
+                    Button("Rectangle") { addBed(shape: .rectangle) }
+                    Button("Triangle") { addBed(shape: .triangle) }
                 } label: {
                     Label("Add Bed", systemImage: "square.dashed")
                 }
@@ -132,13 +127,16 @@ struct GardenMapView: View {
     /// near the center of the map (where the view is already scrolled to,
     /// not off in a far corner of the large grid — see
     /// docs/decisions/0014-endless-grid.md). Rename, recolor, resize (drag
-    /// the corner handle), reposition (drag the bed), or delete it after.
-    private func addBed() {
+    /// the corner handle, or for a triangle, any of its 3 corner dots), or
+    /// reposition (drag the bed) after. Shape is fixed at creation — see
+    /// docs/decisions/0017-bed-shapes-and-plant-zones.md.
+    private func addBed(shape: BedShape) {
         let width = min(2, mapArea.columns)
         let height = min(2, mapArea.rows)
         let origin = centeredOrigin(width: width, height: height)
         let bed = Bed(
             name: "New bed",
+            shape: shape,
             x: origin.x,
             y: origin.y,
             width: width,

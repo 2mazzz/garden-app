@@ -24,3 +24,4 @@ in both files.
 | [0014](0014-endless-grid.md) | A large, centered grid instead of a small fixed one ("endless" scrolling) |
 | [0015](0015-weather-data-source.md) | SMHI open data API instead of WeatherKit (avoids paid Apple Developer Program) |
 | [0016](0016-additive-species-seeding.md) | Additive, per-species wiki seeding instead of empty-catalog gating |
+| [0017](0017-bed-shapes-and-plant-zones.md) | Triangle beds and resizable plant footprints/zones instead of point icons |

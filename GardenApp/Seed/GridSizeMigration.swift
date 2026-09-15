@@ -59,8 +59,12 @@ enum GridSizeMigration {
 
         for area in areas where area.columns == legacyColumns && area.rows == legacyRows {
             for bed in area.beds ?? [] {
-                bed.x += offsetX
-                bed.y += offsetY
+                if bed.shape == .triangle {
+                    bed.translateVertices(dx: offsetX, dy: offsetY)
+                } else {
+                    bed.x += offsetX
+                    bed.y += offsetY
+                }
             }
             for structure in area.structures ?? [] {
                 structure.x += offsetX

@@ -14,6 +14,12 @@ final class PlacedPlant: Identifiable {
     /// Position in grid cells, relative to the owning MapArea.
     var x: Int = 0
     var y: Int = 0
+    /// Footprint in grid cells — a real area (a strawberry zone inside a
+    /// bed, a tree's canopy), not a fixed-size point icon. Draggable and
+    /// resizable the same way beds are. See
+    /// docs/decisions/0017-bed-shapes-and-plant-zones.md.
+    var width: Int = 1
+    var height: Int = 1
 
     var statusRaw: String = PlantStatus.planned.rawValue
     var datePlanted: Date?
@@ -29,6 +35,8 @@ final class PlacedPlant: Identifiable {
         bed: Bed? = nil,
         x: Int,
         y: Int,
+        width: Int = 1,
+        height: Int = 1,
         status: PlantStatus = .planned,
         datePlanted: Date? = nil,
         notes: String = ""
@@ -39,6 +47,8 @@ final class PlacedPlant: Identifiable {
         self.bed = bed
         self.x = x
         self.y = y
+        self.width = width
+        self.height = height
         self.statusRaw = status.rawValue
         self.datePlanted = datePlanted
         self.notes = notes

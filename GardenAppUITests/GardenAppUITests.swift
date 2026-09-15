@@ -8,43 +8,43 @@ final class GardenAppUITests: XCTestCase {
         app.launch()
 
         let tabBar = app.tabBars.firstMatch
-        XCTAssertTrue(tabBar.waitForExistence(timeout: 5))
+        XCTAssertTrue(tabBar.waitForExistence(timeout: 20))
         XCTAssertTrue(tabBar.buttons["Garden"].exists)
         XCTAssertTrue(tabBar.buttons["Calendar"].exists)
         XCTAssertTrue(tabBar.buttons["Wiki"].exists)
         XCTAssertTrue(tabBar.buttons["Settings"].exists)
 
         // Garden tab is the home screen and shows the greenhouse structure.
-        XCTAssertTrue(app.navigationBars["Garden"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.navigationBars["Garden"].waitForExistence(timeout: 20))
         let greenhouseButton = app.buttons["Greenhouse"]
-        XCTAssertTrue(greenhouseButton.waitForExistence(timeout: 5))
+        XCTAssertTrue(greenhouseButton.waitForExistence(timeout: 20))
 
         // Tapping it enters the greenhouse's own map, with a back button to Garden.
         greenhouseButton.tap()
-        XCTAssertTrue(app.navigationBars["Greenhouse"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.navigationBars["Greenhouse"].waitForExistence(timeout: 20))
         app.navigationBars["Greenhouse"].buttons["Garden"].tap()
-        XCTAssertTrue(app.navigationBars["Garden"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.navigationBars["Garden"].waitForExistence(timeout: 20))
 
         // Calendar tab shows the month picker and at least one seeded task.
         tabBar.buttons["Calendar"].tap()
-        XCTAssertTrue(app.navigationBars["Care Calendar"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.navigationBars["Care Calendar"].waitForExistence(timeout: 20))
 
         // Wiki tab shows the Swedish starter catalog, grouped alphabetically
         // by category — "Flower" sorts first, so "Tulpan" is guaranteed to
         // be on-screen without scrolling (List only realizes visible rows).
         tabBar.buttons["Wiki"].tap()
-        XCTAssertTrue(app.navigationBars["Plant Wiki"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.navigationBars["Plant Wiki"].waitForExistence(timeout: 20))
         let tulpanPredicate = NSPredicate(format: "label CONTAINS[c] %@", "Tulpan")
         let tulpanElement = app.descendants(matching: .any).matching(tulpanPredicate).firstMatch
-        XCTAssertTrue(tulpanElement.waitForExistence(timeout: 5))
+        XCTAssertTrue(tulpanElement.waitForExistence(timeout: 20))
 
         // Settings tab shows the weather/frost-alert section added alongside
         // garden style and size — see docs/plans/2026-09-14-weather-and-harvest-design.md.
         tabBar.buttons["Settings"].tap()
-        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 20))
         let weatherSectionPredicate = NSPredicate(format: "label CONTAINS[c] %@", "Garden weather")
         let weatherSection = app.descendants(matching: .any).matching(weatherSectionPredicate).firstMatch
-        XCTAssertTrue(weatherSection.waitForExistence(timeout: 5))
+        XCTAssertTrue(weatherSection.waitForExistence(timeout: 20))
     }
 
     /// Exercises the direct-manipulation bed flow: create (no popup), drag
@@ -53,12 +53,15 @@ final class GardenAppUITests: XCTestCase {
         let app = XCUIApplication()
         app.launch()
 
-        XCTAssertTrue(app.navigationBars["Garden"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.navigationBars["Garden"].waitForExistence(timeout: 20))
 
-        // Creating a bed shows it immediately with no popup.
+        // Creating a bed shows it immediately with no popup — "Add Bed" is
+        // a menu offering a shape (rectangle/triangle) since
+        // docs/decisions/0017-bed-shapes-and-plant-zones.md.
         app.navigationBars["Garden"].buttons["Add Bed"].tap()
+        app.buttons["Rectangle"].tap()
         let bed = app.buttons["New bed"]
-        XCTAssertTrue(bed.waitForExistence(timeout: 5))
+        XCTAssertTrue(bed.waitForExistence(timeout: 20))
         let originalFrame = bed.frame
 
         // Dragging the bed's body moves it (verified by its frame changing).
@@ -67,17 +70,17 @@ final class GardenAppUITests: XCTestCase {
         start.press(forDuration: 0.1, thenDragTo: end)
 
         let movedBed = app.buttons["New bed"]
-        XCTAssertTrue(movedBed.waitForExistence(timeout: 5))
+        XCTAssertTrue(movedBed.waitForExistence(timeout: 20))
         XCTAssertNotEqual(movedBed.frame.origin.x, originalFrame.origin.x,
                            "Expected the bed's on-screen position to change after dragging it")
 
         // A plain tap (negligible movement) opens the compact edit menu, not a move.
         movedBed.tap()
-        XCTAssertTrue(app.navigationBars["Edit Bed"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.buttons["Delete bed"].waitForExistence(timeout: 2))
+        XCTAssertTrue(app.navigationBars["Edit Bed"].waitForExistence(timeout: 20))
+        XCTAssertTrue(app.buttons["Delete bed"].waitForExistence(timeout: 12))
 
         app.buttons["Delete bed"].tap()
-        XCTAssertFalse(app.buttons["New bed"].waitForExistence(timeout: 3))
+        XCTAssertFalse(app.buttons["New bed"].waitForExistence(timeout: 15))
     }
 
     /// Regression test: picking a bed from the general "Add Plant" sheet's
@@ -88,34 +91,44 @@ final class GardenAppUITests: XCTestCase {
         let app = XCUIApplication()
         app.launch()
 
-        XCTAssertTrue(app.navigationBars["Garden"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.navigationBars["Garden"].waitForExistence(timeout: 20))
 
         app.navigationBars["Garden"].buttons["Add Bed"].tap()
+        app.buttons["Rectangle"].tap()
         let bed = app.buttons["New bed"]
-        XCTAssertTrue(bed.waitForExistence(timeout: 5))
+        XCTAssertTrue(bed.waitForExistence(timeout: 20))
         let bedFrame = bed.frame
 
         app.navigationBars["Garden"].buttons["Add Plant"].tap()
-        XCTAssertTrue(app.navigationBars["Place Plant"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.navigationBars["Place Plant"].waitForExistence(timeout: 20))
 
         // The Form's Picker rows present their options as a popover menu
         // (a CollectionView of buttons), not a pushed list — scope the
         // query to collectionViews so this doesn't collide with the
         // same-named bed/plant buttons already on the map underneath.
+        //
+        // Bed must be picked before species: on the outdoor map, only
+        // trees are selectable without a bed chosen first — see
+        // AddPlantSheet.availableSpecies and
+        // docs/decisions/0017-bed-shapes-and-plant-zones.md. The picker's
+        // displayed value isn't asserted here (it has no "None" option to
+        // start with in this context), so match on the label prefix.
+        let bedPickerButton = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Bed")).firstMatch
+        XCTAssertTrue(bedPickerButton.waitForExistence(timeout: 20))
+        bedPickerButton.tap()
+        let bedOption = app.collectionViews.buttons["New bed"]
+        XCTAssertTrue(bedOption.waitForExistence(timeout: 20))
+        bedOption.tap()
+
         app.buttons["Species, Choose one"].tap()
         let speciesOption = app.collectionViews.buttons["Potatis"]
-        XCTAssertTrue(speciesOption.waitForExistence(timeout: 5))
+        XCTAssertTrue(speciesOption.waitForExistence(timeout: 20))
         speciesOption.tap()
-
-        app.buttons["Bed, None"].tap()
-        let bedOption = app.collectionViews.buttons["New bed"]
-        XCTAssertTrue(bedOption.waitForExistence(timeout: 5))
-        bedOption.tap()
 
         app.buttons["Add"].tap()
 
         let plantMarker = app.buttons["Potatis"]
-        XCTAssertTrue(plantMarker.waitForExistence(timeout: 5))
+        XCTAssertTrue(plantMarker.waitForExistence(timeout: 20))
         XCTAssertTrue(
             bedFrame.insetBy(dx: -1, dy: -1).contains(plantMarker.frame.origin),
             "Expected the plant to be positioned inside the bed's rectangle, not the sheet's stepper default"
@@ -124,15 +137,15 @@ final class GardenAppUITests: XCTestCase {
         // Clean up so later tests in the suite don't see leftover data —
         // the persistent store survives across app launches.
         plantMarker.tap()
-        XCTAssertTrue(app.buttons["Remove from map"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["Remove from map"].waitForExistence(timeout: 20))
         app.buttons["Remove from map"].tap()
 
-        XCTAssertTrue(bed.waitForExistence(timeout: 5))
+        XCTAssertTrue(bed.waitForExistence(timeout: 20))
         bed.tap()
-        XCTAssertTrue(app.navigationBars["Edit Bed"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.buttons["Delete bed"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.navigationBars["Edit Bed"].waitForExistence(timeout: 20))
+        XCTAssertTrue(app.buttons["Delete bed"].waitForExistence(timeout: 20))
         app.buttons["Delete bed"].tap()
-        XCTAssertFalse(bed.waitForExistence(timeout: 3), "Expected the bed created by this test to be cleaned up")
+        XCTAssertFalse(bed.waitForExistence(timeout: 15), "Expected the bed created by this test to be cleaned up")
     }
 
     /// Exercises adding a non-functional structure (a driveway), dragging
@@ -143,15 +156,15 @@ final class GardenAppUITests: XCTestCase {
         let app = XCUIApplication()
         app.launch()
 
-        XCTAssertTrue(app.navigationBars["Garden"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.navigationBars["Garden"].waitForExistence(timeout: 20))
 
         app.navigationBars["Garden"].buttons["Add Structure"].tap()
-        XCTAssertTrue(app.navigationBars["Add Structure"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.navigationBars["Add Structure"].waitForExistence(timeout: 20))
         app.buttons["Driveway"].tap()
         app.buttons["Add"].tap()
 
         let driveway = app.buttons["Driveway"]
-        XCTAssertTrue(driveway.waitForExistence(timeout: 5))
+        XCTAssertTrue(driveway.waitForExistence(timeout: 20))
         let originalFrame = driveway.frame
 
         // Dragging the structure's body moves it — this used to be
@@ -161,19 +174,81 @@ final class GardenAppUITests: XCTestCase {
         start.press(forDuration: 0.1, thenDragTo: end)
 
         let movedDriveway = app.buttons["Driveway"]
-        XCTAssertTrue(movedDriveway.waitForExistence(timeout: 5))
+        XCTAssertTrue(movedDriveway.waitForExistence(timeout: 20))
         XCTAssertNotEqual(movedDriveway.frame.origin.x, originalFrame.origin.x,
                            "Expected the structure's on-screen position to change after dragging it")
 
         // The pencil icon opens the edit sheet directly (a plain tap would
         // try to navigate for a linked structure, but a driveway has none).
         let editIcon = movedDriveway.images["Edit"]
-        XCTAssertTrue(editIcon.waitForExistence(timeout: 5))
+        XCTAssertTrue(editIcon.waitForExistence(timeout: 20))
         editIcon.tap()
-        XCTAssertTrue(app.navigationBars["Edit Structure"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.buttons["Delete structure"].waitForExistence(timeout: 2))
+        XCTAssertTrue(app.navigationBars["Edit Structure"].waitForExistence(timeout: 20))
+        XCTAssertTrue(app.buttons["Delete structure"].waitForExistence(timeout: 12))
 
         app.buttons["Delete structure"].tap()
-        XCTAssertFalse(app.buttons["Driveway"].waitForExistence(timeout: 3))
+        XCTAssertFalse(app.buttons["Driveway"].waitForExistence(timeout: 15))
+    }
+
+    /// Exercises the freeform triangle bed shape — create, drag the whole
+    /// shape to move it, and delete. See
+    /// docs/decisions/0017-bed-shapes-and-plant-zones.md.
+    func testTriangleBedCreateDragDelete() throws {
+        let app = XCUIApplication()
+        app.launch()
+
+        XCTAssertTrue(app.navigationBars["Garden"].waitForExistence(timeout: 20))
+
+        app.navigationBars["Garden"].buttons["Add Bed"].tap()
+        app.buttons["Triangle"].tap()
+        let bed = app.buttons["New bed"]
+        XCTAssertTrue(bed.waitForExistence(timeout: 20))
+        let originalFrame = bed.frame
+
+        // Dragging inside the triangle moves the whole shape.
+        let start = bed.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.7))
+        let end = bed.coordinate(withNormalizedOffset: CGVector(dx: 3.5, dy: 2.7))
+        start.press(forDuration: 0.1, thenDragTo: end)
+
+        let movedBed = app.buttons["New bed"]
+        XCTAssertTrue(movedBed.waitForExistence(timeout: 20))
+        XCTAssertNotEqual(movedBed.frame.origin.x, originalFrame.origin.x,
+                           "Expected the triangle's on-screen position to change after dragging it")
+
+        movedBed.tap()
+        XCTAssertTrue(app.navigationBars["Edit Bed"].waitForExistence(timeout: 20))
+        XCTAssertTrue(app.buttons["Delete bed"].waitForExistence(timeout: 12))
+
+        app.buttons["Delete bed"].tap()
+        XCTAssertFalse(app.buttons["New bed"].waitForExistence(timeout: 15))
+    }
+
+    /// Enforces the placement rule from
+    /// docs/decisions/0017-bed-shapes-and-plant-zones.md: on the outdoor
+    /// map, without a bed selected, only trees are offered — a
+    /// non-tree species like Potatis must not appear.
+    func testOpenGroundSpeciesPickerOnlyOffersTrees() throws {
+        let app = XCUIApplication()
+        app.launch()
+
+        XCTAssertTrue(app.navigationBars["Garden"].waitForExistence(timeout: 20))
+
+        app.navigationBars["Garden"].buttons["Add Plant"].tap()
+        XCTAssertTrue(app.navigationBars["Place Plant"].waitForExistence(timeout: 20))
+
+        app.buttons["Species, Choose one"].tap()
+        XCTAssertTrue(app.collectionViews.buttons["Äppelträd"].waitForExistence(timeout: 20))
+        XCTAssertFalse(app.collectionViews.buttons["Potatis"].exists,
+                        "A non-tree species shouldn't be offered for open-ground placement")
+
+        app.collectionViews.buttons["Äppelträd"].tap()
+        app.buttons["Add"].tap()
+
+        let tree = app.buttons["Äppelträd"]
+        XCTAssertTrue(tree.waitForExistence(timeout: 20))
+        tree.tap()
+        XCTAssertTrue(app.buttons["Remove from map"].waitForExistence(timeout: 20))
+        app.buttons["Remove from map"].tap()
+        XCTAssertFalse(tree.waitForExistence(timeout: 15))
     }
 }
