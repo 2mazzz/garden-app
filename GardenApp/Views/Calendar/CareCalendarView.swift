@@ -10,11 +10,11 @@ struct CareCalendarView: View {
     @State private var showingAddTask = false
     @State private var frostRisk: FrostAlertService.FrostRisk?
 
-    private static let monthNames = Calendar.current.monthSymbols
-
     private var currentMonthHarvestNames: Set<String> {
         Set(plantsToHarvestThisMonth.compactMap { $0.species?.commonName })
     }
+
+    private static let monthNames = Calendar.current.monthSymbols
 
     private var tasksForMonth: [MonthlyTaskTemplate] {
         allTasks

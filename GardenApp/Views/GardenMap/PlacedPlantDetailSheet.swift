@@ -66,6 +66,7 @@ struct PlacedPlantDetailSheet: View {
                 Section {
                     Button("Remove from map", role: .destructive) {
                         modelContext.delete(placedPlant)
+                        try? modelContext.save()
                         dismiss()
                     }
                 }

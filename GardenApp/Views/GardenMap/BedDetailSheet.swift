@@ -46,6 +46,7 @@ struct BedDetailSheet: View {
                 Section {
                     Button("Delete bed", role: .destructive) {
                         modelContext.delete(bed)
+                        try? modelContext.save()
                         dismiss()
                     }
                 }

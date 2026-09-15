@@ -43,6 +43,7 @@ struct StructureDetailSheet: View {
                 Section {
                     Button("Delete structure", role: .destructive) {
                         modelContext.delete(structure)
+                        try? modelContext.save()
                         dismiss()
                     }
                 }

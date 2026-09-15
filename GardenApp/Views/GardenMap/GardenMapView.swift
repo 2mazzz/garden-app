@@ -182,6 +182,20 @@ struct GardenMapView: View {
             }
     }
 
+    /// Pinch to zoom in/out on the canvas. The committed/live split mirrors
+    /// BedView's drag pattern: liveZoom is the in-progress pinch delta,
+    /// folded into committedZoom once the gesture ends.
+    private var magnificationGesture: some Gesture {
+        MagnificationGesture()
+            .onChanged { value in
+                liveZoom = value
+            }
+            .onEnded { value in
+                committedZoom = min(max(committedZoom * value, 0.5), 3.0)
+                liveZoom = 1.0
+            }
+    }
+
     private var gridBackground: some View {
         Canvas { context, _ in
             let cols = mapArea.columns
@@ -203,26 +217,9 @@ struct GardenMapView: View {
                 style: StrokeStyle(lineWidth: theme.gridLineWidth, dash: theme.gridLineDash)
             )
         }
-        .frame(
-            width: CGFloat(mapArea.columns) * mapCellSize,
-            height: CGFloat(mapArea.rows) * mapCellSize
-        )
+        .frame(width: unscaledWidth, height: unscaledHeight)
         .contentShape(Rectangle())
         .gesture(backgroundTapGesture)
-    }
-
-    /// Pinch to zoom in/out on the canvas. The committed/live split mirrors
-    /// BedView's drag pattern: liveZoom is the in-progress pinch delta,
-    /// folded into committedZoom once the gesture ends.
-    private var magnificationGesture: some Gesture {
-        MagnificationGesture()
-            .onChanged { value in
-                liveZoom = value
-            }
-            .onEnded { value in
-                committedZoom = min(max(committedZoom * value, 0.5), 3.0)
-                liveZoom = 1.0
-            }
     }
 
     /// A fixed (non-zooming) reminder of what one grid cell represents,
