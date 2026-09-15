@@ -14,19 +14,19 @@ struct BedDetailSheet: View {
 
     @State private var showingAddPlant = false
 
-    private let colorOptions = ["#8B5E3C", "#5B7B4B", "#B08968", "#4A6670", "#A3623E"]
+    private var colorBinding: Binding<Color> {
+        Binding(
+            get: { Color(hex: bed.colorHex) },
+            set: { bed.colorHex = $0.toHexString() }
+        )
+    }
 
     var body: some View {
         NavigationStack {
             Form {
                 Section {
                     TextField("Name", text: $bed.name)
-                    Picker("Color", selection: $bed.colorHex) {
-                        ForEach(colorOptions, id: \.self) { hex in
-                            Text(hex).tag(hex)
-                        }
-                    }
-                    .pickerStyle(.segmented)
+                    ColorPicker("Color", selection: colorBinding)
                 }
 
                 Section {

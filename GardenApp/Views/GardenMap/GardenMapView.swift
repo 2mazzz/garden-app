@@ -5,8 +5,9 @@ let mapCellSize: CGFloat = 32
 
 /// Renders one MapArea (the outdoor garden, or an area entered by tapping a
 /// structure like the greenhouse) as a grid canvas. Beds are drawn as
-/// colored rectangles, structures (e.g. the greenhouse) as tappable
-/// buildings you can enter, and plants/trees as icons on top.
+/// colored rectangles, structures (e.g. the greenhouse, a house, a
+/// driveway) as draggable/resizable rectangles you can optionally enter,
+/// and plants/trees as icons on top.
 ///
 /// Expects to be hosted inside a NavigationStack owned by the caller (see
 /// RootTabView) rather than providing its own, so that entering a linked
@@ -16,9 +17,12 @@ struct GardenMapView: View {
     @Bindable var mapArea: MapArea
 
     @State private var isAddingPlant = false
+    @State private var isAddingStructure = false
     @State private var prefilledPoint: GridPoint?
     @State private var selectedPlacedPlant: PlacedPlant?
     @State private var selectedBed: Bed?
+    @State private var selectedStructure: Structure?
+    @State private var structureNavigationTarget: MapArea?
 
     private var beds: [Bed] { mapArea.beds ?? [] }
     private var placedPlants: [PlacedPlant] { mapArea.placedPlants ?? [] }
@@ -34,16 +38,15 @@ struct GardenMapView: View {
                 }
 
                 ForEach(structures) { structure in
-                    NavigationLink(value: structure.linkedMapArea) {
-                        StructureView(structure: structure)
+                    StructureView(structure: structure, mapArea: mapArea) {
+                        if let linked = structure.linkedMapArea {
+                            structureNavigationTarget = linked
+                        } else {
+                            selectedStructure = structure
+                        }
+                    } onEdit: {
+                        selectedStructure = structure
                     }
-                    .buttonStyle(.plain)
-                    .disabled(structure.linkedMapArea == nil)
-                    .frame(width: CGFloat(structure.width) * mapCellSize, height: CGFloat(structure.height) * mapCellSize)
-                    .position(
-                        x: (CGFloat(structure.x) + CGFloat(structure.width) / 2) * mapCellSize,
-                        y: (CGFloat(structure.y) + CGFloat(structure.height) / 2) * mapCellSize
-                    )
                 }
 
                 emptyCellTapTargets
@@ -65,12 +68,20 @@ struct GardenMapView: View {
             .padding()
         }
         .navigationTitle(mapArea.name)
+        .navigationDestination(item: $structureNavigationTarget) { area in
+            GardenMapView(mapArea: area)
+        }
         .toolbar {
             ToolbarItemGroup(placement: .navigationBarTrailing) {
                 Button {
                     addBed()
                 } label: {
                     Label("Add Bed", systemImage: "square.dashed")
+                }
+                Button {
+                    isAddingStructure = true
+                } label: {
+                    Label("Add Structure", systemImage: "house.fill")
                 }
                 Button {
                     prefilledPoint = nil
@@ -83,11 +94,17 @@ struct GardenMapView: View {
         .sheet(isPresented: $isAddingPlant) {
             AddPlantSheet(mapArea: mapArea, defaultPoint: prefilledPoint)
         }
+        .sheet(isPresented: $isAddingStructure) {
+            AddStructureSheet(mapArea: mapArea)
+        }
         .sheet(item: $selectedPlacedPlant) { plant in
             PlacedPlantDetailSheet(placedPlant: plant)
         }
         .sheet(item: $selectedBed) { bed in
             BedDetailSheet(bed: bed, mapArea: mapArea)
+        }
+        .sheet(item: $selectedStructure) { structure in
+            StructureDetailSheet(structure: structure, mapArea: mapArea)
         }
     }
 

@@ -21,5 +21,8 @@ struct PlacedPlantView: View {
                     .foregroundStyle(.green)
             }
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(species?.commonName ?? "Plant")
+        .accessibilityAddTraits(.isButton)
     }
 }

@@ -11,9 +11,6 @@ struct RootTabView: View {
                 if let garden = outdoorAreas.first {
                     NavigationStack {
                         GardenMapView(mapArea: garden)
-                            .navigationDestination(for: MapArea.self) { area in
-                                GardenMapView(mapArea: area)
-                            }
                     }
                 } else {
                     ProgressView()

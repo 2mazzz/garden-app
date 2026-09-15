@@ -18,3 +18,4 @@ in both files.
 | [0008](0008-cloudkit-fallback.md) | Fall back to local storage if the CloudKit container isn't provisioned |
 | [0009](0009-cloudkit-attribute-defaults.md) | Every SwiftData attribute needs a default value at the property declaration |
 | [0010](0010-direct-manipulation-beds.md) | Direct-manipulation bed editing (drag to move/resize) instead of a form popup |
+| [0011](0011-structure-direct-manipulation.md) | Extend direct manipulation to structures; generic house/driveway/shed presets |
