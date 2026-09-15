@@ -24,6 +24,7 @@ let metersPerCell: Double = 0.5
 /// structure (garden -> greenhouse) is a normal push, not a new stack.
 struct GardenMapView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.gardenTheme) private var theme
     @Bindable var mapArea: MapArea
 
     @State private var isAddingPlant = false
@@ -84,6 +85,7 @@ struct GardenMapView: View {
             .frame(width: unscaledWidth * zoomScale, height: unscaledHeight * zoomScale, alignment: .topLeading)
             .padding()
         }
+        .background(theme.backgroundColor)
         .gesture(magnificationGesture)
         .overlay(alignment: .bottomLeading) { scaleLegend }
         .navigationTitle(mapArea.name)
@@ -190,7 +192,11 @@ struct GardenMapView: View {
                 path.move(to: CGPoint(x: 0, y: y))
                 path.addLine(to: CGPoint(x: CGFloat(cols) * mapCellSize, y: y))
             }
-            context.stroke(path, with: .color(.secondary.opacity(0.25)), lineWidth: 0.5)
+            context.stroke(
+                path,
+                with: .color(theme.gridLineColor),
+                style: StrokeStyle(lineWidth: theme.gridLineWidth, dash: theme.gridLineDash)
+            )
         }
         .frame(
             width: CGFloat(mapArea.columns) * mapCellSize,
@@ -218,7 +224,7 @@ struct GardenMapView: View {
     private var scaleLegend: some View {
         HStack(spacing: 4) {
             Rectangle()
-                .fill(Color.accentColor)
+                .fill(theme.accentColor)
                 .frame(width: 16, height: 4)
             Text("= \(metersPerCell, specifier: "%.1f") m")
                 .font(.caption2)

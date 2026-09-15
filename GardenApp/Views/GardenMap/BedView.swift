@@ -9,6 +9,8 @@ struct BedView: View {
     let mapArea: MapArea
     var onTap: () -> Void
 
+    @Environment(\.gardenTheme) private var theme
+
     @State private var dragTranslation: CGSize = .zero
     @State private var isDragging = false
     @State private var resizeTranslation: CGSize = .zero
@@ -39,15 +41,15 @@ struct BedView: View {
 
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
-            RoundedRectangle(cornerRadius: 6)
-                .fill(Color(hex: bed.colorHex).opacity(0.35))
+            RoundedRectangle(cornerRadius: theme.bedCornerRadius)
+                .fill(Color(hex: bed.colorHex).opacity(theme.bedFillOpacity))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 6)
-                        .stroke(Color(hex: bed.colorHex), lineWidth: (isDragging || isResizing) ? 3 : 1.5)
+                    RoundedRectangle(cornerRadius: theme.bedCornerRadius)
+                        .stroke(Color(hex: bed.colorHex), lineWidth: (isDragging || isResizing) ? theme.bedBorderWidth + 1.5 : theme.bedBorderWidth)
                 )
                 .overlay(alignment: .topLeading) {
                     Text(bed.name)
-                        .font(.caption2)
+                        .font(theme.labelFont)
                         .padding(3)
                         .foregroundStyle(.secondary)
                 }

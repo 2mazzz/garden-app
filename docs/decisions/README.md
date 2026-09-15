@@ -20,3 +20,4 @@ in both files.
 | [0010](0010-direct-manipulation-beds.md) | Direct-manipulation bed editing (drag to move/resize) instead of a form popup |
 | [0011](0011-structure-direct-manipulation.md) | Extend direct manipulation to structures; generic house/driveway/shed presets |
 | [0012](0012-garden-scale-and-zoom.md) | Pinch-to-zoom and an in-app garden size control |
+| [0013](0013-theme-system.md) | Three switchable "gardeny" visual themes |

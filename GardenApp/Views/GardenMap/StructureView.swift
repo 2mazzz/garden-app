@@ -13,6 +13,8 @@ struct StructureView: View {
     var onTap: () -> Void
     var onEdit: () -> Void
 
+    @Environment(\.gardenTheme) private var theme
+
     @State private var dragTranslation: CGSize = .zero
     @State private var isDragging = false
     @State private var resizeTranslation: CGSize = .zero
@@ -41,10 +43,10 @@ struct StructureView: View {
 
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
-            RoundedRectangle(cornerRadius: 8)
+            RoundedRectangle(cornerRadius: theme.structureCornerRadius)
                 .fill(Color(hex: structure.colorHex).opacity(0.5))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 8)
+                    RoundedRectangle(cornerRadius: theme.structureCornerRadius)
                         .stroke(Color(hex: structure.colorHex), lineWidth: (isDragging || isResizing) ? 3 : 2)
                 )
                 .overlay {
@@ -53,7 +55,7 @@ struct StructureView: View {
                             .font(.title3)
                             .accessibilityHidden(true)
                         Text(structure.name)
-                            .font(.caption2.bold())
+                            .font(theme.labelFont)
                     }
                     .foregroundStyle(.primary)
                 }

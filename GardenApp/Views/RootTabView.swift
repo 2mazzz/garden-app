@@ -5,6 +5,10 @@ struct RootTabView: View {
     @Query(filter: #Predicate<MapArea> { $0.kindRaw == "outdoor" })
     private var outdoorAreas: [MapArea]
 
+    @AppStorage(GardenTheme.storageKey) private var themeRawValue: String = GardenTheme.handDrawnJournal.rawValue
+
+    private var theme: GardenTheme { GardenTheme(rawValue: themeRawValue) ?? .handDrawnJournal }
+
     var body: some View {
         TabView {
             Group {
@@ -27,6 +31,8 @@ struct RootTabView: View {
             SettingsView()
                 .tabItem { Label("Settings", systemImage: "gearshape.fill") }
         }
+        .tint(theme.accentColor)
+        .environment(\.gardenTheme, theme)
     }
 }
 
