@@ -108,8 +108,12 @@ struct StructureView: View {
             }
     }
 
+    /// Named coordinate space, not local — see BedView.resizeGesture for
+    /// why (the handle's local frame resizes live during this very
+    /// gesture, which causes bad flicker on diagonal drags if translation
+    /// is tracked against it instead of a stable ancestor space).
     private var resizeGesture: some Gesture {
-        DragGesture(minimumDistance: 2)
+        DragGesture(minimumDistance: 2, coordinateSpace: .named(mapCanvasCoordinateSpace))
             .onChanged { value in
                 isResizing = true
                 resizeTranslation = value.translation

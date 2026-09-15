@@ -12,6 +12,7 @@ final class GardenAppUITests: XCTestCase {
         XCTAssertTrue(tabBar.buttons["Garden"].exists)
         XCTAssertTrue(tabBar.buttons["Calendar"].exists)
         XCTAssertTrue(tabBar.buttons["Wiki"].exists)
+        XCTAssertTrue(tabBar.buttons["Settings"].exists)
 
         // Garden tab is the home screen and shows the greenhouse structure.
         XCTAssertTrue(app.navigationBars["Garden"].waitForExistence(timeout: 5))

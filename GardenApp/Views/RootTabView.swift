@@ -23,6 +23,9 @@ struct RootTabView: View {
 
             PlantWikiListView()
                 .tabItem { Label("Wiki", systemImage: "book.fill") }
+
+            SettingsView()
+                .tabItem { Label("Settings", systemImage: "gearshape.fill") }
         }
     }
 }

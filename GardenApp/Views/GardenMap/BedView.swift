@@ -95,8 +95,16 @@ struct BedView: View {
             }
     }
 
+    /// Measured in the map's named coordinate space (declared on
+    /// GardenMapView's content ZStack), not the handle's own local space.
+    /// The handle sits inside a frame sized to liveWidth/liveHeight, which
+    /// changes every time this gesture updates — tracking translation
+    /// against that constantly-resizing local frame is a feedback loop
+    /// (the frame moves under the finger as a side effect of the drag
+    /// itself) that showed up as bad flickering on diagonal resizes.
+    /// Anchoring to a stable named ancestor space fixes it.
     private var resizeGesture: some Gesture {
-        DragGesture(minimumDistance: 2)
+        DragGesture(minimumDistance: 2, coordinateSpace: .named(mapCanvasCoordinateSpace))
             .onChanged { value in
                 isResizing = true
                 resizeTranslation = value.translation

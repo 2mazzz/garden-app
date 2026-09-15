@@ -3,6 +3,16 @@ import SwiftData
 
 let mapCellSize: CGFloat = 32
 
+/// Named coordinate space for the map's content ZStack (declared below the
+/// zoom `.scaleEffect`, above any individual bed/structure). Resize
+/// gestures measure against this stable space rather than their own local
+/// one — see the comment on `BedView.resizeGesture` for why.
+let mapCanvasCoordinateSpace = "mapCanvas"
+
+/// Each grid cell represents about 0.5 meters — see
+/// docs/decisions/0012-garden-scale-and-zoom.md.
+let metersPerCell: Double = 0.5
+
 /// Renders one MapArea (the outdoor garden, or an area entered by tapping a
 /// structure like the greenhouse) as a grid canvas. Beds are drawn as
 /// colored rectangles, structures (e.g. the greenhouse, a house, a
@@ -24,9 +34,16 @@ struct GardenMapView: View {
     @State private var selectedStructure: Structure?
     @State private var structureNavigationTarget: MapArea?
 
+    @State private var committedZoom: CGFloat = 1.0
+    @State private var liveZoom: CGFloat = 1.0
+
     private var beds: [Bed] { mapArea.beds ?? [] }
     private var placedPlants: [PlacedPlant] { mapArea.placedPlants ?? [] }
     private var structures: [Structure] { mapArea.structures ?? [] }
+
+    private var zoomScale: CGFloat { committedZoom * liveZoom }
+    private var unscaledWidth: CGFloat { CGFloat(mapArea.columns) * mapCellSize }
+    private var unscaledHeight: CGFloat { CGFloat(mapArea.rows) * mapCellSize }
 
     var body: some View {
         ScrollView([.horizontal, .vertical]) {
@@ -61,12 +78,14 @@ struct GardenMapView: View {
                         .onTapGesture { selectedPlacedPlant = plant }
                 }
             }
-            .frame(
-                width: CGFloat(mapArea.columns) * mapCellSize,
-                height: CGFloat(mapArea.rows) * mapCellSize
-            )
+            .frame(width: unscaledWidth, height: unscaledHeight)
+            .coordinateSpace(name: mapCanvasCoordinateSpace)
+            .scaleEffect(zoomScale, anchor: .topLeading)
+            .frame(width: unscaledWidth * zoomScale, height: unscaledHeight * zoomScale, alignment: .topLeading)
             .padding()
         }
+        .gesture(magnificationGesture)
+        .overlay(alignment: .bottomLeading) { scaleLegend }
         .navigationTitle(mapArea.name)
         .navigationDestination(item: $structureNavigationTarget) { area in
             GardenMapView(mapArea: area)
@@ -177,6 +196,37 @@ struct GardenMapView: View {
             width: CGFloat(mapArea.columns) * mapCellSize,
             height: CGFloat(mapArea.rows) * mapCellSize
         )
+    }
+
+    /// Pinch to zoom in/out on the canvas. The committed/live split mirrors
+    /// BedView's drag pattern: liveZoom is the in-progress pinch delta,
+    /// folded into committedZoom once the gesture ends.
+    private var magnificationGesture: some Gesture {
+        MagnificationGesture()
+            .onChanged { value in
+                liveZoom = value
+            }
+            .onEnded { value in
+                committedZoom = min(max(committedZoom * value, 0.5), 3.0)
+                liveZoom = 1.0
+            }
+    }
+
+    /// A fixed (non-zooming) reminder of what one grid cell represents,
+    /// pinned to the corner of the scroll view rather than the scaled
+    /// content, so it stays legible at any zoom level.
+    private var scaleLegend: some View {
+        HStack(spacing: 4) {
+            Rectangle()
+                .fill(Color.accentColor)
+                .frame(width: 16, height: 4)
+            Text("= \(metersPerCell, specifier: "%.1f") m")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+        }
+        .padding(6)
+        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 6))
+        .padding(8)
     }
 }
 

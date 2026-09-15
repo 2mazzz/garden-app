@@ -48,4 +48,29 @@ final class MapArea: Identifiable {
         get { MapAreaKind(rawValue: kindRaw) ?? .outdoor }
         set { kindRaw = newValue.rawValue }
     }
+
+    /// Changes the grid size. Existing beds/structures/plants are clamped
+    /// back inside the new bounds rather than deleted, so shrinking never
+    /// loses data — see docs/decisions/0012-garden-scale-and-zoom.md.
+    func resize(toColumns columns: Int, rows: Int) {
+        self.columns = columns
+        self.rows = rows
+
+        for bed in beds ?? [] {
+            bed.width = min(bed.width, columns)
+            bed.height = min(bed.height, rows)
+            bed.x = min(bed.x, max(0, columns - bed.width))
+            bed.y = min(bed.y, max(0, rows - bed.height))
+        }
+        for structure in structures ?? [] {
+            structure.width = min(structure.width, columns)
+            structure.height = min(structure.height, rows)
+            structure.x = min(structure.x, max(0, columns - structure.width))
+            structure.y = min(structure.y, max(0, rows - structure.height))
+        }
+        for plant in placedPlants ?? [] {
+            plant.x = min(plant.x, max(0, columns - 1))
+            plant.y = min(plant.y, max(0, rows - 1))
+        }
+    }
 }
