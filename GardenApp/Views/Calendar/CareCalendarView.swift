@@ -8,8 +8,13 @@ struct CareCalendarView: View {
 
     @State private var selectedMonth = Calendar.current.component(.month, from: .now)
     @State private var showingAddTask = false
+    @State private var frostRisk: FrostAlertService.FrostRisk?
 
     private static let monthNames = Calendar.current.monthSymbols
+
+    private var currentMonthHarvestNames: Set<String> {
+        Set(plantsToHarvestThisMonth.compactMap { $0.species?.commonName })
+    }
 
     private var tasksForMonth: [MonthlyTaskTemplate] {
         allTasks
@@ -32,6 +37,26 @@ struct CareCalendarView: View {
     var body: some View {
         NavigationStack {
             List {
+                if let frostRisk {
+                    Section {
+                        ForEach(Array(Set(frostRisk.atRiskPlants.compactMap { $0.species?.commonName })).sorted(), id: \.self) { name in
+                            Label {
+                                if currentMonthHarvestNames.contains(name) {
+                                    Text("\(name) — ready to harvest, consider picking now")
+                                } else {
+                                    Text(name)
+                                }
+                            } icon: {
+                                Image(systemName: "thermometer.snowflake")
+                            }
+                        }
+                    } header: {
+                        Text("Frost risk — \(frostRisk.date, style: .date)")
+                    } footer: {
+                        Text("Protect or bring these frost-tender plants indoors.")
+                    }
+                }
+
                 Section {
                     Picker("Month", selection: $selectedMonth) {
                         ForEach(1...12, id: \.self) { month in
@@ -88,6 +113,9 @@ struct CareCalendarView: View {
             }
             .sheet(isPresented: $showingAddTask) {
                 AddTaskSheet(defaultMonth: selectedMonth)
+            }
+            .task {
+                frostRisk = try? await FrostAlertService.checkFrostRisk(in: modelContext)
             }
         }
     }

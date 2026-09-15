@@ -34,6 +34,10 @@ targets:
           - UIInterfaceOrientationPortrait
         UIApplicationSceneManifest:
           UIApplicationSupportsMultipleScenes: false
+        UIBackgroundModes:
+          - fetch
+        BGTaskSchedulerPermittedIdentifiers:
+          - com.tomasrojder.gardenapp.frostcheck
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.tomasrojder.gardenapp

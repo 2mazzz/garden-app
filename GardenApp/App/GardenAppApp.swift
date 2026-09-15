@@ -1,9 +1,11 @@
 import SwiftUI
 import SwiftData
+import BackgroundTasks
 
 @main
 struct GardenAppApp: App {
     let modelContainer: ModelContainer
+    @Environment(\.scenePhase) private var scenePhase
 
     init() {
         let schema = Schema([
@@ -12,7 +14,9 @@ struct GardenAppApp: App {
             Bed.self,
             Structure.self,
             PlacedPlant.self,
-            MonthlyTaskTemplate.self
+            MonthlyTaskTemplate.self,
+            GardenLocation.self,
+            HarvestLog.self
         ])
 
         // CloudKit sync via the private database of whichever iCloud account
@@ -33,20 +37,30 @@ struct GardenAppApp: App {
         // back to local-only storage so the app is still usable — data
         // just won't sync until it's run with real signing. See
         // docs/decisions/0008-cloudkit-fallback.md.
-        if let container = try? ModelContainer(for: schema, configurations: [cloudKitConfiguration]) {
-            modelContainer = container
+        let container: ModelContainer
+        if let cloudKitContainer = try? ModelContainer(for: schema, configurations: [cloudKitConfiguration]) {
+            container = cloudKitContainer
         } else {
             let localConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
             do {
-                modelContainer = try ModelContainer(for: schema, configurations: [localConfiguration])
+                container = try ModelContainer(for: schema, configurations: [localConfiguration])
             } catch {
                 fatalError("Failed to create ModelContainer even without CloudKit: \(error)")
             }
         }
+        modelContainer = container
 
-        SeedData.populateIfNeeded(in: modelContainer.mainContext)
-        GridSizeMigration.migrateIfNeeded(in: modelContainer.mainContext)
-        try? modelContainer.mainContext.save()
+        SeedData.populateIfNeeded(in: container.mainContext)
+        GridSizeMigration.migrateIfNeeded(in: container.mainContext)
+        try? container.mainContext.save()
+
+        // Best-effort daily background frost check — see
+        // docs/plans/2026-09-14-weather-and-harvest-design.md. Background
+        // task timing is opportunistic, not guaranteed; the scenePhase
+        // foreground check below is the reliable path.
+        BGTaskScheduler.shared.register(forTaskWithIdentifier: FrostAlertService.backgroundTaskIdentifier, using: nil) { task in
+            Self.handleFrostCheckTask(task as! BGAppRefreshTask, modelContainer: container)
+        }
     }
 
     var body: some Scene {
@@ -54,5 +68,34 @@ struct GardenAppApp: App {
             RootTabView()
         }
         .modelContainer(modelContainer)
+        .onChange(of: scenePhase) { _, newPhase in
+            switch newPhase {
+            case .active:
+                Task { await FrostAlertService.checkAndNotify(in: modelContainer.mainContext) }
+            case .background:
+                Self.scheduleFrostCheck()
+            default:
+                break
+            }
+        }
+    }
+
+    private static func scheduleFrostCheck() {
+        let request = BGAppRefreshTaskRequest(identifier: FrostAlertService.backgroundTaskIdentifier)
+        request.earliestBeginDate = Calendar.current.date(byAdding: .hour, value: 12, to: .now)
+        try? BGTaskScheduler.shared.submit(request)
+    }
+
+    private static func handleFrostCheckTask(_ task: BGAppRefreshTask, modelContainer: ModelContainer) {
+        scheduleFrostCheck()
+
+        let context = ModelContext(modelContainer)
+        let work = Task {
+            await FrostAlertService.checkAndNotify(in: context)
+            task.setTaskCompleted(success: true)
+        }
+        task.expirationHandler = {
+            work.cancel()
+        }
     }
 }

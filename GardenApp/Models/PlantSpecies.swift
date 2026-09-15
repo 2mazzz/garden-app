@@ -13,6 +13,9 @@ final class PlantSpecies: Identifiable {
     var sunRequirementRaw: String = SunRequirement.fullSun.rawValue
     var waterRequirementRaw: String = WaterRequirement.medium.rawValue
     var isTree: Bool = false
+    /// Needs protection (or bringing indoors) when frost is forecast —
+    /// drives the frost-alert feature. See docs/decisions/0015-weather-data-source.md.
+    var isFrostTender: Bool = false
 
     /// Freeform care instructions (watering, pruning, feeding, winter care, etc.)
     var careNotes: String = ""
@@ -42,6 +45,7 @@ final class PlantSpecies: Identifiable {
         sunRequirement: SunRequirement,
         waterRequirement: WaterRequirement,
         isTree: Bool = false,
+        isFrostTender: Bool = false,
         careNotes: String = "",
         soilNotes: String = "",
         spacingNotes: String = "",
@@ -58,6 +62,7 @@ final class PlantSpecies: Identifiable {
         self.sunRequirementRaw = sunRequirement.rawValue
         self.waterRequirementRaw = waterRequirement.rawValue
         self.isTree = isTree
+        self.isFrostTender = isFrostTender
         self.careNotes = careNotes
         self.soilNotes = soilNotes
         self.spacingNotes = spacingNotes

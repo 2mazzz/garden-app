@@ -37,6 +37,14 @@ final class GardenAppUITests: XCTestCase {
         let tulpanPredicate = NSPredicate(format: "label CONTAINS[c] %@", "Tulpan")
         let tulpanElement = app.descendants(matching: .any).matching(tulpanPredicate).firstMatch
         XCTAssertTrue(tulpanElement.waitForExistence(timeout: 5))
+
+        // Settings tab shows the weather/frost-alert section added alongside
+        // garden style and size — see docs/plans/2026-09-14-weather-and-harvest-design.md.
+        tabBar.buttons["Settings"].tap()
+        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 5))
+        let weatherSectionPredicate = NSPredicate(format: "label CONTAINS[c] %@", "Garden weather")
+        let weatherSection = app.descendants(matching: .any).matching(weatherSectionPredicate).firstMatch
+        XCTAssertTrue(weatherSection.waitForExistence(timeout: 5))
     }
 
     /// Exercises the direct-manipulation bed flow: create (no popup), drag

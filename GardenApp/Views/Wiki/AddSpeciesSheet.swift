@@ -13,6 +13,7 @@ struct AddSpeciesSheet: View {
     @State private var scientificName = ""
     @State private var category: PlantCategory = .vegetable
     @State private var isTree = false
+    @State private var isFrostTender = false
     @State private var sunRequirement: SunRequirement = .fullSun
     @State private var waterRequirement: WaterRequirement = .medium
     @State private var careNotes = ""
@@ -35,6 +36,7 @@ struct AddSpeciesSheet: View {
                         }
                     }
                     Toggle("This is a tree", isOn: $isTree)
+                    Toggle("Frost-tender (needs protection)", isOn: $isFrostTender)
                 }
 
                 Section("Needs") {
@@ -110,6 +112,7 @@ struct AddSpeciesSheet: View {
             sunRequirement: sunRequirement,
             waterRequirement: waterRequirement,
             isTree: isTree,
+            isFrostTender: isFrostTender,
             careNotes: careNotes,
             soilNotes: soilNotes,
             spacingNotes: spacingNotes,

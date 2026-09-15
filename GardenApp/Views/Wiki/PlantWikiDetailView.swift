@@ -15,6 +15,10 @@ struct PlantWikiDetailView: View {
                 }
                 LabeledContent("Sun", value: species.sunRequirement.displayName)
                 LabeledContent("Water", value: species.waterRequirement.displayName)
+                if species.isFrostTender {
+                    Label("Frost-tender — needs protection", systemImage: "thermometer.snowflake")
+                        .foregroundStyle(.orange)
+                }
             }
 
             if !species.plantingMonths.isEmpty {
