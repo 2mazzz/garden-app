@@ -110,6 +110,7 @@ struct GHChip: View {
                 .clipShape(RoundedRectangle(cornerRadius: GreenhouseTheme.Radius.chip))
         }
         .buttonStyle(.plain)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
     private var foreground: SwiftUI.Color {
@@ -227,6 +228,8 @@ struct GHCheckbox: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityAddTraits(isChecked ? [.isSelected] : [])
+        .accessibilityValue(isChecked ? "Checked" : "Not checked")
     }
 }
 
@@ -259,11 +262,14 @@ struct GHToggleStyle: ToggleStyle {
                         .padding(3)
                 }
                 .frame(width: 40, height: 24)
+                .animation(.easeInOut(duration: 0.2), value: configuration.isOn)
             }
             .contentShape(Rectangle())
             .frame(minHeight: 44)
         }
         .buttonStyle(.plain)
+        .accessibilityAddTraits(.isButton)
+        .accessibilityValue(configuration.isOn ? "On" : "Off")
     }
 }
 
