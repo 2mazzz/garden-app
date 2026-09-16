@@ -251,4 +251,56 @@ final class GardenAppUITests: XCTestCase {
         app.buttons["Remove from map"].tap()
         XCTAssertFalse(tree.waitForExistence(timeout: 15))
     }
+
+    /// Exercises the Today tab's core flow: add a task via the sheet,
+    /// confirm it appears, and toggle its checkbox — the
+    /// taskCheckbox-<uuid> accessibility identifier set on
+    /// GardenTaskCardRow (GardenApp/Views/Today/TodayView.swift) exists
+    /// specifically for this. See
+    /// docs/plans/2026-09-15-greenhouse-redesign-design.md ("Today
+    /// (new)").
+    func testTodayTabAddTaskAndToggleCheckbox() throws {
+        let app = XCUIApplication()
+        app.launch()
+
+        let tabBar = app.tabBars.firstMatch
+        XCTAssertTrue(tabBar.waitForExistence(timeout: 20))
+        tabBar.buttons["Today"].tap()
+
+        let addTaskButton = app.buttons["Add Task"]
+        XCTAssertTrue(addTaskButton.waitForExistence(timeout: 20))
+        addTaskButton.tap()
+
+        XCTAssertTrue(app.navigationBars["New Task"].waitForExistence(timeout: 20))
+        let titleField = app.textFields["Title"]
+        XCTAssertTrue(titleField.waitForExistence(timeout: 20))
+        titleField.tap()
+        // GardenTask has no delete UI yet, so the store accumulates across
+        // runs — a unique title avoids colliding with leftovers from
+        // earlier runs when matching by static text below.
+        let taskTitle = "UI Test Task \(Date().timeIntervalSince1970)"
+        titleField.typeText(taskTitle)
+        app.buttons["Add"].tap()
+
+        let titleElement = app.staticTexts[taskTitle]
+        XCTAssertTrue(titleElement.waitForExistence(timeout: 20))
+
+        // Find the checkbox on the same row as the title we just added —
+        // proximity, not "first match", since older leftover tasks may
+        // also be on screen with their own taskCheckbox- buttons.
+        let checkboxes = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "taskCheckbox-"))
+        var checkbox: XCUIElement?
+        for i in 0..<checkboxes.count {
+            let candidate = checkboxes.element(boundBy: i)
+            if abs(candidate.frame.midY - titleElement.frame.midY) < 30 {
+                checkbox = candidate
+                break
+            }
+        }
+        let taskCheckbox = try XCTUnwrap(checkbox, "Expected to find the new task's checkbox")
+
+        XCTAssertEqual(taskCheckbox.value as? String, "Not checked")
+        taskCheckbox.tap()
+        XCTAssertEqual(taskCheckbox.value as? String, "Checked")
+    }
 }
