@@ -47,8 +47,9 @@ final class Bed: Identifiable {
     // .nullify, not .cascade: a GardenTask naming this bed is a freeform
     // to-do, not owned data about the bed — deleting the bed should just
     // detach the task, not delete it. CloudKit-backed SwiftData requires
-    // every relationship to declare an inverse, so GardenTask.bed needs
-    // this counterpart.
+    // every relationship to declare an inverse (see
+    // docs/decisions/0019-cloudkit-relationship-inverses.md), so
+    // GardenTask.bed needs this counterpart.
     @Relationship(deleteRule: .nullify, inverse: \GardenTask.bed)
     var gardenTasks: [GardenTask]? = []
 
