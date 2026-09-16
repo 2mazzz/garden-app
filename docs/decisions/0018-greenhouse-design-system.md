@@ -57,3 +57,11 @@ no replacement design for editing.
 - If a future design pass wants an actual "edit the plot as named tiles"
   mode, it needs its own design work (the handoff didn't provide one) —
   not a reason to revisit this decision on its own.
+- Bed/structure/plant fill colors on the map deliberately stay each
+  object's own user-set `colorHex` (chosen via a `ColorPicker` in the
+  detail sheets) rather than being forced onto the handoff's mist-default/
+  leaf-tint-when-planted scheme. That per-object color was already
+  user-customizable data before this redesign, unrelated to theming —
+  overriding it to match the handoff would remove a real feature, not
+  restyle one. Only the theme-driven fill opacity and border width were
+  replaced with fixed constants (see `BedView.swift`, `PlacedPlantView.swift`).
