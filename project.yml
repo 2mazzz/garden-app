@@ -38,6 +38,12 @@ targets:
           - fetch
         BGTaskSchedulerPermittedIdentifiers:
           - com.tomasrojder.gardenapp.frostcheck
+        UIAppFonts:
+          - WorkSans-Regular.ttf
+          - WorkSans-Medium.ttf
+          - WorkSans-SemiBold.ttf
+          - IBMPlexMono-Regular.ttf
+          - IBMPlexMono-Medium.ttf
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.tomasrojder.gardenapp
