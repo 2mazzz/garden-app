@@ -27,3 +27,4 @@ in both files.
 | [0017](0017-bed-shapes-and-plant-zones.md) | Triangle beds and resizable plant footprints/zones instead of point icons |
 | [0018](0018-greenhouse-design-system.md) | Adopt the "Greenhouse" design system as a fixed static theme; keep the freeform map instead of the handoff's fixed plot-tile grid (supersedes 0013) |
 | [0019](0019-cloudkit-relationship-inverses.md) | Every SwiftData relationship needs a declared inverse |
+| [0020](0020-query-requires-save.md) | `@Query` needs an explicit `modelContext.save()` to observe a new insert |
