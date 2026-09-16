@@ -7,6 +7,9 @@ struct RootTabView: View {
 
     var body: some View {
         TabView {
+            TodayView()
+                .tabItem { Label("Today", systemImage: "square.fill") }
+
             Group {
                 if let garden = outdoorAreas.first {
                     NavigationStack {
@@ -18,11 +21,11 @@ struct RootTabView: View {
             }
             .tabItem { Label("Garden", systemImage: "leaf.fill") }
 
-            CareCalendarView()
-                .tabItem { Label("Calendar", systemImage: "calendar") }
-
             PlantWikiListView()
                 .tabItem { Label("Wiki", systemImage: "book.fill") }
+
+            CareCalendarView()
+                .tabItem { Label("Calendar", systemImage: "calendar") }
 
             SettingsView()
                 .tabItem { Label("Settings", systemImage: "gearshape.fill") }
