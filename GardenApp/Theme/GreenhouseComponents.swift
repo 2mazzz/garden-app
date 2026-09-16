@@ -16,14 +16,27 @@ struct GHButtonStyle: ButtonStyle {
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(GreenhouseTheme.Font.listItem())
-            .padding(.horizontal, GreenhouseTheme.Spacing.md + 4) // 20px per spec
+            // 15px/600 per spec; no matching 15px/SemiBold token exists on
+            // GreenhouseTheme.Font (listItem() is 15px/Medium), so this is
+            // hardcoded rather than substituting a mismatched weight.
+            .font(.custom("Work Sans SemiBold", size: 15))
+            .padding(.horizontal, horizontalPadding)
             .padding(.vertical, GreenhouseTheme.Spacing.sm) // 12px per spec
             .frame(minHeight: 44)
             .background(background(configuration: configuration))
             .foregroundStyle(foreground)
             .overlay(border)
             .clipShape(RoundedRectangle(cornerRadius: GreenhouseTheme.Radius.control))
+    }
+
+    /// Primary/secondary get 20px horizontal padding; ghost gets 16px — the
+    /// handoff specifies ghost padding as `12px 16px`, distinct from the
+    /// other two kinds' `12px 20px`.
+    private var horizontalPadding: CGFloat {
+        switch kind {
+        case .primary, .secondary: return GreenhouseTheme.Spacing.md + 4 // 20px
+        case .ghost: return GreenhouseTheme.Spacing.md // 16px
+        }
     }
 
     private var foreground: SwiftUI.Color {
@@ -341,7 +354,9 @@ struct GHEmptyState: View {
             GHArtPlaceholder(caption: headline, size: CGSize(width: 120, height: 60))
 
             Text(headline)
-                .font(GreenhouseTheme.Font.cardTitle())
+                // 16px/600 per spec; cardTitle() is 17px/600 (1px off), so
+                // hardcoded here rather than reusing the mismatched token.
+                .font(.custom("Work Sans SemiBold", size: 16))
                 .foregroundStyle(GreenhouseTheme.Color.ink)
                 .multilineTextAlignment(.center)
 
@@ -354,8 +369,8 @@ struct GHEmptyState: View {
             Button(buttonTitle, action: action)
                 .buttonStyle(GHButtonStyle(kind: .primary))
         }
-        .padding(.horizontal, GreenhouseTheme.Spacing.md)
-        .padding(.vertical, GreenhouseTheme.Spacing.sm + 6) // 22px vertical per spec
+        .padding(.horizontal, 18) // 18px per spec (`22px 18px`); no exact Spacing token
+        .padding(.vertical, 22) // 22px per spec (`22px 18px`)
         .frame(maxWidth: .infinity)
         .background(GreenhouseTheme.Color.mist)
         .overlay(
@@ -395,7 +410,9 @@ struct GHAlertRow: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(headline)
-                    .font(GreenhouseTheme.Font.listItem())
+                    // 14px/600 per spec; no matching token (listItem() is
+                    // 15px/Medium), so hardcoded rather than substituted.
+                    .font(.custom("Work Sans SemiBold", size: 14))
                     .foregroundStyle(GreenhouseTheme.Color.overdueInk)
                 Text(detail)
                     .font(GreenhouseTheme.Font.small())
