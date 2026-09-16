@@ -9,7 +9,11 @@ struct PlacedPlantView: View {
     let mapArea: MapArea
     var onTap: () -> Void
 
-    @Environment(\.gardenTheme) private var theme
+    /// Same fixed-opacity/border rationale as BedView — no GreenhouseTheme
+    /// numeric-opacity token exists, so these replace the old theme's
+    /// per-theme values with one reasonable constant.
+    private let fillOpacity: Double = 0.55
+    private let borderWidth: CGFloat = 1.5
 
     @State private var dragTranslation: CGSize = .zero
     @State private var isDragging = false
@@ -43,10 +47,10 @@ struct PlacedPlantView: View {
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
             Circle()
-                .fill(Color(hex: colorHex).opacity(theme.bedFillOpacity + 0.2))
+                .fill(Color(hex: colorHex).opacity(fillOpacity))
                 .overlay(
                     Circle()
-                        .stroke(Color(hex: colorHex), lineWidth: (isDragging || isResizing) ? theme.bedBorderWidth + 1.5 : theme.bedBorderWidth)
+                        .stroke(Color(hex: colorHex), lineWidth: (isDragging || isResizing) ? borderWidth + 1.5 : borderWidth)
                 )
                 .overlay {
                     VStack(spacing: 2) {
@@ -54,8 +58,8 @@ struct PlacedPlantView: View {
                             .foregroundStyle(Color(hex: colorHex))
                         if liveWidth > mapCellSize * 1.4 {
                             Text(species?.commonName ?? "Plant")
-                                .font(theme.labelFont)
-                                .foregroundStyle(.secondary)
+                                .font(GreenhouseTheme.Font.small())
+                                .foregroundStyle(GreenhouseTheme.Color.metaText)
                                 .lineLimit(1)
                         }
                     }

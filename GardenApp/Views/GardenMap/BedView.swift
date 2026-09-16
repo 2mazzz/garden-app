@@ -12,7 +12,12 @@ struct BedView: View {
     let mapArea: MapArea
     var onTap: () -> Void
 
-    @Environment(\.gardenTheme) private var theme
+    /// Flat fill opacity applied over the bed's own user-chosen `colorHex` —
+    /// not a GreenhouseTheme token (the design system has no numeric-opacity
+    /// scale), just a fixed reasonable value replacing the old theme's
+    /// per-theme opacity.
+    private let fillOpacity: Double = 0.35
+    private let borderWidth: CGFloat = 1.5
 
     // Rectangle drag/resize state.
     @State private var dragTranslation: CGSize = .zero
@@ -62,17 +67,17 @@ struct BedView: View {
 
     private var rectangleBody: some View {
         ZStack(alignment: .bottomTrailing) {
-            RoundedRectangle(cornerRadius: theme.bedCornerRadius)
-                .fill(Color(hex: bed.colorHex).opacity(theme.bedFillOpacity))
+            RoundedRectangle(cornerRadius: GreenhouseTheme.Radius.card)
+                .fill(Color(hex: bed.colorHex).opacity(fillOpacity))
                 .overlay(
-                    RoundedRectangle(cornerRadius: theme.bedCornerRadius)
-                        .stroke(Color(hex: bed.colorHex), lineWidth: (isDragging || isResizing) ? theme.bedBorderWidth + 1.5 : theme.bedBorderWidth)
+                    RoundedRectangle(cornerRadius: GreenhouseTheme.Radius.card)
+                        .stroke(Color(hex: bed.colorHex), lineWidth: (isDragging || isResizing) ? borderWidth + 1.5 : borderWidth)
                 )
                 .overlay(alignment: .topLeading) {
                     Text(bed.name)
-                        .font(theme.labelFont)
+                        .font(GreenhouseTheme.Font.small())
                         .padding(3)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(GreenhouseTheme.Color.metaText)
                 }
 
             Image(systemName: "arrow.up.left.and.arrow.down.right")
@@ -179,15 +184,15 @@ struct BedView: View {
     private var triangleBody: some View {
         ZStack(alignment: .topLeading) {
             trianglePath
-                .fill(Color(hex: bed.colorHex).opacity(theme.bedFillOpacity))
+                .fill(Color(hex: bed.colorHex).opacity(fillOpacity))
             trianglePath
                 .stroke(
                     Color(hex: bed.colorHex),
-                    lineWidth: (isDraggingBody || draggingVertexIndex != nil) ? theme.bedBorderWidth + 1.5 : theme.bedBorderWidth
+                    lineWidth: (isDraggingBody || draggingVertexIndex != nil) ? borderWidth + 1.5 : borderWidth
                 )
             Text(bed.name)
-                .font(theme.labelFont)
-                .foregroundStyle(.secondary)
+                .font(GreenhouseTheme.Font.small())
+                .foregroundStyle(GreenhouseTheme.Color.metaText)
                 .position(triangleCentroid)
 
             ForEach(0..<3, id: \.self) { index in

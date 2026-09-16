@@ -24,7 +24,6 @@ let metersPerCell: Double = 0.5
 /// structure (garden -> greenhouse) is a normal push, not a new stack.
 struct GardenMapView: View {
     @Environment(\.modelContext) private var modelContext
-    @Environment(\.gardenTheme) private var theme
     @Bindable var mapArea: MapArea
 
     @State private var isAddingPlant = false
@@ -78,7 +77,7 @@ struct GardenMapView: View {
             .padding()
         }
         .defaultScrollAnchor(.center)
-        .background(theme.backgroundColor)
+        .background(GreenhouseTheme.Color.plotMapGround)
         .gesture(magnificationGesture)
         .overlay(alignment: .bottomLeading) { scaleLegend }
         .navigationTitle(mapArea.name)
@@ -213,8 +212,8 @@ struct GardenMapView: View {
             }
             context.stroke(
                 path,
-                with: .color(theme.gridLineColor),
-                style: StrokeStyle(lineWidth: theme.gridLineWidth, dash: theme.gridLineDash)
+                with: .color(GreenhouseTheme.Color.line),
+                style: StrokeStyle(lineWidth: 1)
             )
         }
         .frame(width: unscaledWidth, height: unscaledHeight)
@@ -228,7 +227,7 @@ struct GardenMapView: View {
     private var scaleLegend: some View {
         HStack(spacing: 4) {
             Rectangle()
-                .fill(theme.accentColor)
+                .fill(GreenhouseTheme.Color.green)
                 .frame(width: 16, height: 4)
             Text("= \(metersPerCell, specifier: "%.1f") m")
                 .font(.caption2)

@@ -13,7 +13,7 @@ struct StructureView: View {
     var onTap: () -> Void
     var onEdit: () -> Void
 
-    @Environment(\.gardenTheme) private var theme
+    private let cornerRadius: CGFloat = GreenhouseTheme.Radius.card
 
     @State private var dragTranslation: CGSize = .zero
     @State private var isDragging = false
@@ -43,10 +43,10 @@ struct StructureView: View {
 
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
-            RoundedRectangle(cornerRadius: theme.structureCornerRadius)
+            RoundedRectangle(cornerRadius: cornerRadius)
                 .fill(Color(hex: structure.colorHex).opacity(0.5))
                 .overlay(
-                    RoundedRectangle(cornerRadius: theme.structureCornerRadius)
+                    RoundedRectangle(cornerRadius: cornerRadius)
                         .stroke(Color(hex: structure.colorHex), lineWidth: (isDragging || isResizing) ? 3 : 2)
                 )
                 .overlay {
@@ -55,9 +55,9 @@ struct StructureView: View {
                             .font(.title3)
                             .accessibilityHidden(true)
                         Text(structure.name)
-                            .font(theme.labelFont)
+                            .font(GreenhouseTheme.Font.small())
                     }
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(GreenhouseTheme.Color.ink)
                 }
                 .overlay(alignment: .topTrailing) {
                     Image(systemName: "pencil.circle.fill")
