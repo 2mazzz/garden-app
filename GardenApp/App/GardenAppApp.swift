@@ -16,7 +16,9 @@ struct GardenAppApp: App {
             PlacedPlant.self,
             MonthlyTaskTemplate.self,
             GardenLocation.self,
-            HarvestLog.self
+            HarvestLog.self,
+            GardenTask.self,
+            PlantNote.self
         ])
 
         // CloudKit sync via the private database of whichever iCloud account

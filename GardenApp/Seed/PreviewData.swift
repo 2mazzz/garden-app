@@ -13,7 +13,9 @@ enum PreviewData {
             PlacedPlant.self,
             MonthlyTaskTemplate.self,
             GardenLocation.self,
-            HarvestLog.self
+            HarvestLog.self,
+            GardenTask.self,
+            PlantNote.self
         ])
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
         let container = try! ModelContainer(for: schema, configurations: [configuration])

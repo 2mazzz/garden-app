@@ -28,6 +28,18 @@ final class PlacedPlant: Identifiable {
     @Relationship(deleteRule: .cascade, inverse: \HarvestLog.placedPlant)
     var harvestLogs: [HarvestLog]? = []
 
+    @Relationship(deleteRule: .cascade, inverse: \PlantNote.placedPlant)
+    var notes_log: [PlantNote]? = []
+
+    // .nullify, not .cascade: a GardenTask referencing this plant is a
+    // freeform to-do, not owned data about the plant — deleting the plant
+    // should just detach the task, not delete it. CloudKit-backed SwiftData
+    // requires every relationship to declare an inverse (see
+    // docs/decisions/0009-cloudkit-attribute-defaults.md's sibling
+    // constraint), so GardenTask.placedPlant needs this counterpart.
+    @Relationship(deleteRule: .nullify, inverse: \GardenTask.placedPlant)
+    var gardenTasks: [GardenTask]? = []
+
     init(
         id: UUID = UUID(),
         species: PlantSpecies?,

@@ -44,6 +44,14 @@ final class Bed: Identifiable {
     @Relationship(deleteRule: .nullify, inverse: \PlacedPlant.bed)
     var placedPlants: [PlacedPlant]? = []
 
+    // .nullify, not .cascade: a GardenTask naming this bed is a freeform
+    // to-do, not owned data about the bed — deleting the bed should just
+    // detach the task, not delete it. CloudKit-backed SwiftData requires
+    // every relationship to declare an inverse, so GardenTask.bed needs
+    // this counterpart.
+    @Relationship(deleteRule: .nullify, inverse: \GardenTask.bed)
+    var gardenTasks: [GardenTask]? = []
+
     init(
         id: UUID = UUID(),
         name: String,
