@@ -53,6 +53,10 @@ struct LogHarvestSheet: View {
             placedPlant: placedPlant
         )
         modelContext.insert(log)
+        // See docs/decisions/0020-query-requires-save.md — @Query views
+        // don't reliably observe a fresh insert on a clean install without
+        // an explicit save.
+        try? modelContext.save()
         dismiss()
     }
 }
