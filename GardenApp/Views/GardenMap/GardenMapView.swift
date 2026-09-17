@@ -41,45 +41,76 @@ struct GardenMapView: View {
     private var placedPlants: [PlacedPlant] { mapArea.placedPlants ?? [] }
     private var structures: [Structure] { mapArea.structures ?? [] }
 
+    /// Active (non-removed) plants currently placed on this map, for the
+    /// header subtitle.
+    private var activePlantCount: Int {
+        placedPlants.filter { $0.status != .removed }.count
+    }
+
+    /// "Areas" = distinct beds/structures laid out on this map — the plots
+    /// someone could tap into, not a count of plants.
+    private var areaCount: Int {
+        beds.count + structures.count
+    }
+
+    private var headerSubtitle: String {
+        let plantWord = activePlantCount == 1 ? "plant" : "plants"
+        let areaWord = areaCount == 1 ? "area" : "areas"
+        return "\(activePlantCount) \(plantWord) across \(areaCount) \(areaWord)"
+    }
+
     private var zoomScale: CGFloat { committedZoom * liveZoom }
     private var unscaledWidth: CGFloat { CGFloat(mapArea.columns) * mapCellSize }
     private var unscaledHeight: CGFloat { CGFloat(mapArea.rows) * mapCellSize }
 
     var body: some View {
-        ScrollView([.horizontal, .vertical]) {
-            ZStack(alignment: .topLeading) {
-                gridBackground
+        VStack(spacing: 0) {
+            header
 
-                ForEach(beds) { bed in
-                    BedView(bed: bed, mapArea: mapArea) { selectedBed = bed }
-                }
+            ScrollView([.horizontal, .vertical]) {
+                ZStack(alignment: .topLeading) {
+                    gridBackground
 
-                ForEach(structures) { structure in
-                    StructureView(structure: structure, mapArea: mapArea) {
-                        if let linked = structure.linkedMapArea {
-                            structureNavigationTarget = linked
-                        } else {
+                    ForEach(beds) { bed in
+                        BedView(bed: bed, mapArea: mapArea) { selectedBed = bed }
+                    }
+
+                    ForEach(structures) { structure in
+                        StructureView(structure: structure, mapArea: mapArea) {
+                            if let linked = structure.linkedMapArea {
+                                structureNavigationTarget = linked
+                            } else {
+                                selectedStructure = structure
+                            }
+                        } onEdit: {
                             selectedStructure = structure
                         }
-                    } onEdit: {
-                        selectedStructure = structure
+                    }
+
+                    ForEach(placedPlants) { plant in
+                        PlacedPlantView(placedPlant: plant, mapArea: mapArea) { selectedPlacedPlant = plant }
                     }
                 }
-
-                ForEach(placedPlants) { plant in
-                    PlacedPlantView(placedPlant: plant, mapArea: mapArea) { selectedPlacedPlant = plant }
-                }
+                .frame(width: unscaledWidth, height: unscaledHeight)
+                .coordinateSpace(name: mapCanvasCoordinateSpace)
+                .scaleEffect(zoomScale, anchor: .topLeading)
+                .frame(width: unscaledWidth * zoomScale, height: unscaledHeight * zoomScale, alignment: .topLeading)
+                .padding()
             }
-            .frame(width: unscaledWidth, height: unscaledHeight)
-            .coordinateSpace(name: mapCanvasCoordinateSpace)
-            .scaleEffect(zoomScale, anchor: .topLeading)
-            .frame(width: unscaledWidth * zoomScale, height: unscaledHeight * zoomScale, alignment: .topLeading)
-            .padding()
+            .defaultScrollAnchor(.center)
+            .background(GreenhouseTheme.Color.plotMapGround)
+            .gesture(magnificationGesture)
+            .overlay(alignment: .bottomLeading) { scaleLegend }
         }
-        .defaultScrollAnchor(.center)
-        .background(GreenhouseTheme.Color.plotMapGround)
-        .gesture(magnificationGesture)
-        .overlay(alignment: .bottomLeading) { scaleLegend }
+        .background(GreenhouseTheme.Color.paper)
+        // Kept (not cleared) rather than replaced by the custom header
+        // below: existing UI tests and the toolbar/back-button wiring
+        // locate this screen by `app.navigationBars["Garden"]` /
+        // `["Greenhouse"]` (keyed off this exact title), so this can't be
+        // blanked out. In inline display mode (the default — no
+        // `.navigationBarTitleDisplayMode(.large)` here) it's a small
+        // compact bar, so it doesn't visually duplicate the large custom
+        // header beneath it.
         .navigationTitle(mapArea.name)
         .navigationDestination(item: $structureNavigationTarget) { area in
             GardenMapView(mapArea: area)
@@ -193,6 +224,26 @@ struct GardenMapView: View {
                 committedZoom = min(max(committedZoom * value, 0.5), 3.0)
                 liveZoom = 1.0
             }
+    }
+
+    /// Fixed (non-scrolling) header above the pannable/zoomable map canvas —
+    /// reused for both the outdoor Garden and, via the same view, a
+    /// Structure's linked MapArea (e.g. the Greenhouse), so it reads
+    /// `mapArea.name` rather than hardcoding either context's copy.
+    private var header: some View {
+        VStack(alignment: .leading, spacing: GreenhouseTheme.Spacing.xxs) {
+            Text(mapArea.name)
+                .font(GreenhouseTheme.Font.screenTitle())
+                .foregroundStyle(GreenhouseTheme.Color.ink)
+            Text(headerSubtitle)
+                .font(GreenhouseTheme.Font.small())
+                .foregroundStyle(GreenhouseTheme.Color.metaText)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, GreenhouseTheme.Spacing.screenPadding)
+        .padding(.top, GreenhouseTheme.Spacing.sm)
+        .padding(.bottom, GreenhouseTheme.Spacing.xs)
+        .background(GreenhouseTheme.Color.paper)
     }
 
     private var gridBackground: some View {

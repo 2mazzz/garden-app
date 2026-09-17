@@ -26,21 +26,33 @@ struct BedDetailSheet: View {
             Form {
                 Section {
                     TextField("Name", text: $bed.name)
+                        .font(GreenhouseTheme.Font.body())
+                        .foregroundStyle(GreenhouseTheme.Color.ink)
                     ColorPicker("Color", selection: colorBinding)
+                        .font(GreenhouseTheme.Font.body())
+                        .foregroundStyle(GreenhouseTheme.Color.bodyText)
                 }
 
                 Section {
-                    Button("Add a plant to this bed") {
-                        showingAddPlant = true
+                    HStack {
+                        Spacer(minLength: 0)
+                        Button("Add a plant to this bed") {
+                            showingAddPlant = true
+                        }
+                        .buttonStyle(GHButtonStyle(kind: .secondary))
+                        Spacer(minLength: 0)
                     }
+                    .listRowInsets(EdgeInsets())
+                    .listRowBackground(SwiftUI.Color.clear)
+                    .padding(.vertical, GreenhouseTheme.Spacing.xs)
                 }
 
                 Section {
                     Text(bed.shape == .triangle
                         ? "Drag inside the triangle to move it. Drag any corner dot to reshape it."
                         : "Drag the bed on the map to move it. Drag the corner handle to resize it.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
+                        .font(GreenhouseTheme.Font.small())
+                        .foregroundStyle(GreenhouseTheme.Color.metaText)
                 }
 
                 Section {
@@ -49,6 +61,7 @@ struct BedDetailSheet: View {
                         try? modelContext.save()
                         dismiss()
                     }
+                    .font(GreenhouseTheme.Font.listItem())
                 }
             }
             .navigationTitle("Edit Bed")
