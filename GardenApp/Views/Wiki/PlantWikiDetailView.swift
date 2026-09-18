@@ -70,13 +70,7 @@ struct PlantWikiDetailView: View {
     }
 
     private var totalHarvestedByUnit: [(unit: String, total: Double)] {
-        let logs = (species.placements ?? []).flatMap { $0.harvestLogs ?? [] }
-        let totalsByUnit = Dictionary(grouping: logs, by: { $0.unit })
-            .mapValues { $0.compactMap(\.quantity).reduce(0, +) }
-        return totalsByUnit
-            .filter { $0.value > 0 }
-            .map { (unit: $0.key, total: $0.value) }
-            .sorted { $0.unit < $1.unit }
+        (species.placements ?? []).flatMap { $0.harvestLogs ?? [] }.totalsByUnit
     }
 
     private func formatted(_ value: Double) -> String {

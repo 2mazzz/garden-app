@@ -303,4 +303,78 @@ final class GardenAppUITests: XCTestCase {
         taskCheckbox.tap()
         XCTAssertEqual(taskCheckbox.value as? String, "Checked")
     }
+
+    /// Regression test for a question raised while reviewing Task 9:
+    /// PlacedPlantDetailSheet.deleteHarvestLogs deletes without an explicit
+    /// modelContext.save(), the same shape as the insert-path bug in ADR
+    /// 0020. Verified against a fresh install (see ADR 0020's addendum):
+    /// unlike @Query-backed inserts, this delete updates the UI
+    /// immediately, because the row list reads placedPlant.harvestLogs
+    /// directly off an @Bindable model rather than through a separate
+    /// @Query. This test locks that behavior in.
+    func testHarvestLogDeleteUpdatesUIOnFreshInstall() throws {
+        let app = XCUIApplication()
+        app.launch()
+
+        let tabBar = app.tabBars.firstMatch
+        XCTAssertTrue(tabBar.waitForExistence(timeout: 20))
+        tabBar.buttons["Garden"].tap()
+
+        XCTAssertTrue(app.navigationBars["Garden"].waitForExistence(timeout: 20))
+        app.navigationBars["Garden"].buttons["Add Plant"].tap()
+        XCTAssertTrue(app.navigationBars["Place Plant"].waitForExistence(timeout: 20))
+        app.buttons["Species, Choose one"].tap()
+        XCTAssertTrue(app.collectionViews.buttons["Äppelträd"].waitForExistence(timeout: 20))
+        app.collectionViews.buttons["Äppelträd"].tap()
+        app.buttons["Add"].tap()
+
+        let tree = app.buttons["Äppelträd"]
+        XCTAssertTrue(tree.waitForExistence(timeout: 20))
+        tree.tap()
+
+        app.swipeUp()
+        app.swipeUp()
+        XCTAssertTrue(app.buttons["Log harvest"].waitForExistence(timeout: 20))
+
+        // Log two distinguishable harvests.
+        app.buttons["Log harvest"].tap()
+        XCTAssertTrue(app.navigationBars["Log Harvest"].waitForExistence(timeout: 20))
+        var quantityField = app.textFields["Quantity (optional)"]
+        XCTAssertTrue(quantityField.waitForExistence(timeout: 20))
+        quantityField.tap()
+        quantityField.typeText("1")
+        app.buttons["Save"].tap()
+        XCTAssertTrue(app.staticTexts["1 kg"].waitForExistence(timeout: 20))
+
+        app.swipeUp()
+        app.swipeUp()
+        XCTAssertTrue(app.buttons["Log harvest"].waitForExistence(timeout: 20))
+        app.buttons["Log harvest"].tap()
+        XCTAssertTrue(app.navigationBars["Log Harvest"].waitForExistence(timeout: 20))
+        quantityField = app.textFields["Quantity (optional)"]
+        XCTAssertTrue(quantityField.waitForExistence(timeout: 20))
+        quantityField.tap()
+        quantityField.typeText("2")
+        app.buttons["Save"].tap()
+        XCTAssertTrue(app.staticTexts["2 kg"].waitForExistence(timeout: 20))
+
+        // (The Picked stat tile at the top is scrolled out of view at this
+        // point, so it's not checked here.)
+
+        // Swipe-to-delete the "1 kg" harvest log row. Swipe on the row's
+        // Cell, not the narrow "1 kg" label itself — a swipeLeft() on a
+        // ~31pt-wide text element doesn't drag far enough for the List to
+        // recognize a swipe-to-delete gesture.
+        let oneKgRow = app.cells.containing(.staticText, identifier: "1 kg").firstMatch
+        XCTAssertTrue(oneKgRow.waitForExistence(timeout: 20))
+        oneKgRow.swipeLeft()
+        let deleteButton = app.buttons["Delete"]
+        XCTAssertTrue(deleteButton.waitForExistence(timeout: 10))
+        deleteButton.tap()
+
+        // Without backgrounding/relaunching: the row should disappear and
+        // the remaining "2 kg" entry should still be visible immediately.
+        XCTAssertFalse(app.staticTexts["1 kg"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["2 kg"].waitForExistence(timeout: 5))
+    }
 }

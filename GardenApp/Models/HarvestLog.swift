@@ -27,3 +27,18 @@ final class HarvestLog: Identifiable {
         self.placedPlant = placedPlant
     }
 }
+
+extension Array where Element == HarvestLog {
+    /// Sums quantities by unit across whatever set of logs the caller
+    /// passes in — the same summarization math whether that's one
+    /// planting's own logs or every placement of a species pooled
+    /// together; only the *scoping* differs at each call site.
+    var totalsByUnit: [(unit: String, total: Double)] {
+        let totalsByUnit = Dictionary(grouping: self, by: { $0.unit })
+            .mapValues { $0.compactMap(\.quantity).reduce(0, +) }
+        return totalsByUnit
+            .filter { $0.value > 0 }
+            .map { (unit: $0.key, total: $0.value) }
+            .sorted { $0.unit < $1.unit }
+    }
+}

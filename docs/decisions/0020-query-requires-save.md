@@ -57,3 +57,30 @@ immediately after `modelContext.insert(task)`, before `dismiss()`.
 - Confirmed via a real build + a `-only-testing` UI test run against a
   freshly `simctl uninstall`-ed app (not just the full suite, which was
   warm enough to hide the bug), per the "Done means" rule in CLAUDE.md.
+
+## Addendum (2026-09-18): deletes don't have this problem
+
+While reviewing Task 9's `PlacedPlantDetailSheet`, we noticed
+`deleteHarvestLogs` calls `modelContext.delete(...)` with no following
+`save()` — the same shape as this ADR's insert bug. A UI test
+(`GardenAppUITests.testHarvestLogDeleteUpdatesUIOnFreshInstall`) reproduced
+the scenario against a freshly `simctl uninstall`-ed app: log two harvests,
+swipe-to-delete one, and check — without backgrounding or relaunching —
+that the row disappears immediately. It does, consistently across repeated
+clean-install runs. **No fix was needed.**
+
+The likely reason this differs from the insert case: `PlacedPlantDetailSheet`
+doesn't read harvest logs via a `@Query` — it reads
+`placedPlant.harvestLogs` directly off an `@Bindable var placedPlant:
+PlacedPlant`. SwiftUI's `@Bindable`/Observation machinery appears to
+propagate a relationship-array change on an already-observed model
+immediately, without waiting for the context's save notification that
+`@Query`'s live-update mechanism depends on. This is consistent with the
+original finding above (`@Query` specifically needs a save notification to
+refresh), not a contradiction of it.
+
+**This does not relax the standing rule.** Any screen backed by a `@Query`
+still needs an explicit `save()` after `insert()` (and, by the same logic,
+probably after `delete()` too — untested, since no current `@Query`-backed
+delete flow exists to check). The rule only doesn't apply to relationship
+reads off an already-`@Bindable`/observed model, like this one.

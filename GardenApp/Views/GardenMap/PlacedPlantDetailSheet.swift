@@ -19,18 +19,13 @@ struct PlacedPlantDetailSheet: View {
         (placedPlant.journalEntries ?? []).sorted { $0.date > $1.date }
     }
 
-    /// Lifetime harvest total for **this one planting only** — grouped by
-    /// unit, same pattern as PlantWikiDetailView.totalHarvestedByUnit, but
-    /// scoped to `placedPlant.harvestLogs` instead of every placement of
-    /// the species across the whole garden.
+    /// Lifetime harvest total for **this one planting only** — scoped to
+    /// `placedPlant.harvestLogs` instead of every placement of the species
+    /// across the whole garden (that's PlantWikiDetailView's
+    /// `totalHarvestedByUnit`). The grouping/summing math itself lives in
+    /// `Array<HarvestLog>.totalsByUnit`, shared with that other call site.
     private var pickedTotalByUnit: [(unit: String, total: Double)] {
-        let logs = placedPlant.harvestLogs ?? []
-        let totalsByUnit = Dictionary(grouping: logs, by: { $0.unit })
-            .mapValues { $0.compactMap(\.quantity).reduce(0, +) }
-        return totalsByUnit
-            .filter { $0.value > 0 }
-            .map { (unit: $0.key, total: $0.value) }
-            .sorted { $0.unit < $1.unit }
+        (placedPlant.harvestLogs ?? []).totalsByUnit
     }
 
     private var pickedText: String {
