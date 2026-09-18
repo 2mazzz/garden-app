@@ -32,14 +32,22 @@ final class GardenAppUITests: XCTestCase {
         tabBar.buttons["Calendar"].tap()
         XCTAssertTrue(app.navigationBars["Care Calendar"].waitForExistence(timeout: 20))
 
-        // Wiki tab shows the Swedish starter catalog, grouped alphabetically
-        // by category — "Flower" sorts first, so "Tulpan" is guaranteed to
-        // be on-screen without scrolling (List only realizes visible rows).
+        // Wiki tab shows the Swedish starter catalog. Since Task 10's flat,
+        // commonName-sorted list replaced the old category-grouped one,
+        // "Tulpan" is no longer guaranteed to be within the initial
+        // viewport — search for it instead of assuming scroll position.
         tabBar.buttons["Wiki"].tap()
         XCTAssertTrue(app.navigationBars["Plant Wiki"].waitForExistence(timeout: 20))
+        let wikiSearchField = app.searchFields["Search the wiki"]
+        XCTAssertTrue(wikiSearchField.waitForExistence(timeout: 20))
+        wikiSearchField.tap()
+        wikiSearchField.typeText("Tulpan")
         let tulpanPredicate = NSPredicate(format: "label CONTAINS[c] %@", "Tulpan")
         let tulpanElement = app.descendants(matching: .any).matching(tulpanPredicate).firstMatch
         XCTAssertTrue(tulpanElement.waitForExistence(timeout: 20))
+        // Dismiss search — while active it replaces the tab bar, which the
+        // next step needs to switch to Settings.
+        app.buttons["Close"].tap()
 
         // Settings tab shows the weather/frost-alert section added alongside
         // garden style and size — see docs/plans/2026-09-14-weather-and-harvest-design.md.
@@ -572,4 +580,5 @@ final class GardenAppUITests: XCTestCase {
         app.buttons["This month"].tap()
         XCTAssertTrue(app.staticTexts[currentMonthName].waitForExistence(timeout: 10))
     }
+
 }

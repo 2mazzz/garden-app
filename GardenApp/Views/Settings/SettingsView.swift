@@ -24,19 +24,25 @@ struct SettingsView: View {
                         mapAreaSizeControls(area)
                     }
                 } header: {
-                    Text("Garden size")
+                    sectionHeader("Garden size")
                 } footer: {
                     Text("Each grid cell represents about 0.5 meters. Shrinking a map moves anything outside the new bounds back inside it — nothing is deleted.")
+                        .font(GreenhouseTheme.Font.small())
+                        .foregroundStyle(GreenhouseTheme.Color.metaText)
                 }
 
                 Section {
                     if let location = gardenLocation {
                         LabeledContent("Location", value: location.placeName)
+                            .font(GreenhouseTheme.Font.body())
+                            .foregroundStyle(GreenhouseTheme.Color.ink)
                         Button("Change location") {
                             locationSearchText = location.placeName
                         }
+                        .font(GreenhouseTheme.Font.body())
                     }
                     TextField("Address or place (e.g. \"Södertälje\")", text: $locationSearchText)
+                        .font(GreenhouseTheme.Font.body())
                     Button {
                         Task { await geocodeAndSaveLocation() }
                     } label: {
@@ -46,41 +52,65 @@ struct SettingsView: View {
                             Text(gardenLocation == nil ? "Set location" : "Update")
                         }
                     }
+                    .font(GreenhouseTheme.Font.body())
                     .disabled(locationSearchText.trimmingCharacters(in: .whitespaces).isEmpty || isGeocoding)
                     if let locationErrorMessage {
-                        Text(locationErrorMessage).foregroundStyle(.red)
+                        Text(locationErrorMessage)
+                            .font(GreenhouseTheme.Font.small())
+                            .foregroundStyle(.red)
                     }
 
                     Toggle("Frost alerts", isOn: $frostAlertsEnabled)
+                        .font(GreenhouseTheme.Font.body())
                         .disabled(gardenLocation == nil)
                         .onChange(of: frostAlertsEnabled) { _, enabled in
                             if enabled { requestNotificationPermission() }
                         }
                 } header: {
-                    Text("Garden weather")
+                    sectionHeader("Garden weather")
                 } footer: {
                     Text("Set once — the garden's location, not your phone's. Used to warn about frost so you can protect frost-tender plants placed outdoors. Requires a location before alerts can be turned on.")
+                        .font(GreenhouseTheme.Font.small())
+                        .foregroundStyle(GreenhouseTheme.Color.metaText)
                 }
             }
+            .tint(GreenhouseTheme.Color.green)
+            .scrollContentBackground(.hidden)
+            .background(GreenhouseTheme.Color.paper)
+            .listSectionSpacing(GreenhouseTheme.Spacing.md)
+            .listRowSeparatorTint(GreenhouseTheme.Color.cardDivider)
             .navigationTitle("Settings")
         }
+    }
+
+    private func sectionHeader(_ title: String) -> some View {
+        Text(title)
+            .font(GreenhouseTheme.Font.label())
+            .textCase(.uppercase)
+            .kerning(1.1)
+            .foregroundStyle(GreenhouseTheme.Color.metaText)
     }
 
     private func mapAreaSizeControls(_ area: MapArea) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(area.name)
-                .font(.headline)
+                .font(GreenhouseTheme.Font.cardTitle())
+                .foregroundStyle(GreenhouseTheme.Color.ink)
             Stepper(value: Binding(
                 get: { area.columns },
                 set: { area.resize(toColumns: $0, rows: area.rows) }
             ), in: 4...400, step: 5) {
                 Text("Width: \(area.columns) cells (~\(metersLabel(for: area.columns))m)")
+                    .font(GreenhouseTheme.Font.body())
+                    .foregroundStyle(GreenhouseTheme.Color.bodyText)
             }
             Stepper(value: Binding(
                 get: { area.rows },
                 set: { area.resize(toColumns: area.columns, rows: $0) }
             ), in: 4...400, step: 5) {
                 Text("Height: \(area.rows) cells (~\(metersLabel(for: area.rows))m)")
+                    .font(GreenhouseTheme.Font.body())
+                    .foregroundStyle(GreenhouseTheme.Color.bodyText)
             }
         }
         .padding(.vertical, 2)
