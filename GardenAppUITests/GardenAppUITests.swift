@@ -629,4 +629,82 @@ final class GardenAppUITests: XCTestCase {
         app.buttons["Remove from map"].tap()
         XCTAssertFalse(treeMarker.waitForExistence(timeout: 15))
     }
+
+    /// Task 15 manual-walkthrough gap: the Plant detail "Add note" flow
+    /// (PlantNote) had no test coverage anywhere in this file.
+    func testAddPlantNoteAppearsInLog() throws {
+        let app = XCUIApplication()
+        app.launch()
+
+        let tabBar = app.tabBars.firstMatch
+        XCTAssertTrue(tabBar.waitForExistence(timeout: 20))
+        tabBar.buttons["Garden"].tap()
+        XCTAssertTrue(app.navigationBars["Garden"].waitForExistence(timeout: 20))
+        app.navigationBars["Garden"].buttons["Add Plant"].tap()
+        XCTAssertTrue(app.navigationBars["Place Plant"].waitForExistence(timeout: 20))
+        app.buttons["Species, Choose one"].tap()
+        XCTAssertTrue(app.collectionViews.buttons["Äppelträd"].waitForExistence(timeout: 20))
+        app.collectionViews.buttons["Äppelträd"].tap()
+        app.buttons["Add"].tap()
+
+        let tree = app.buttons["Äppelträd"]
+        XCTAssertTrue(tree.waitForExistence(timeout: 20))
+        tree.tap()
+        app.swipeUp()
+        XCTAssertTrue(app.buttons["Add note"].waitForExistence(timeout: 20))
+        app.buttons["Add note"].tap()
+
+        XCTAssertTrue(app.navigationBars["Add Note"].waitForExistence(timeout: 20))
+        let noteField = app.textFields["What's happening with this plant?"]
+        XCTAssertTrue(noteField.waitForExistence(timeout: 10))
+        noteField.tap()
+        noteField.typeText("Looks healthy, new growth on the leader.")
+        app.buttons["Save"].tap()
+
+        XCTAssertTrue(app.staticTexts["Looks healthy, new growth on the leader."].waitForExistence(timeout: 20))
+
+        // Clean up.
+        app.swipeUp()
+        app.swipeUp()
+        XCTAssertTrue(app.buttons["Remove from map"].waitForExistence(timeout: 20))
+        app.buttons["Remove from map"].tap()
+        XCTAssertFalse(tree.waitForExistence(timeout: 15))
+    }
+
+    /// Task 15 manual-walkthrough gap: Settings' size steppers (offline,
+    /// no network dependency unlike the location search) had no coverage.
+    func testSettingsSizeSteppersAdjustGardenDimensions() throws {
+        let app = XCUIApplication()
+        app.launch()
+
+        let tabBar = app.tabBars.firstMatch
+        XCTAssertTrue(tabBar.waitForExistence(timeout: 20))
+        tabBar.buttons["Settings"].tap()
+        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 20))
+
+        let widthLabelPredicate = NSPredicate(format: "label BEGINSWITH %@", "Width:")
+        let widthStaticText = app.staticTexts.matching(widthLabelPredicate).firstMatch
+        XCTAssertTrue(widthStaticText.waitForExistence(timeout: 10))
+        let originalWidthLabel = widthStaticText.label
+
+        // SwiftUI's Stepper exposes as a single `stepper`-type element (not
+        // two separate "Increment"/"Decrement" buttons) — tap its right
+        // half (+) and left half (-) by normalized offset instead.
+        let widthStepper = app.steppers.firstMatch
+        XCTAssertTrue(widthStepper.waitForExistence(timeout: 10))
+        widthStepper.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap()
+
+        XCTAssertNotEqual(
+            app.staticTexts.matching(widthLabelPredicate).firstMatch.label,
+            originalWidthLabel,
+            "Expected the width label to change after tapping the stepper's increment half"
+        )
+
+        // Restore the original size so later tests see the seeded default.
+        // The stepper's accessibility frame spans the whole row (label text
+        // + the +/- control together), so the minus half isn't at the row's
+        // left edge — it's just left of the plus half at the row's right.
+        widthStepper.coordinate(withNormalizedOffset: CGVector(dx: 0.78, dy: 0.5)).tap()
+        XCTAssertEqual(app.staticTexts.matching(widthLabelPredicate).firstMatch.label, originalWidthLabel)
+    }
 }
