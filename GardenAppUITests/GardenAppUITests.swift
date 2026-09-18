@@ -447,4 +447,74 @@ final class GardenAppUITests: XCTestCase {
         dillRow.tap()
         XCTAssertTrue(app.navigationBars["Dill"].waitForExistence(timeout: 10))
     }
+
+    /// Covers the Task 11 Wiki entry restyle: fact tiles render, and the
+    /// in-garden footer cross-link only appears once the species is
+    /// actually placed, then round-trips (Wiki entry -> plant -> "Wiki"
+    /// button -> a wiki entry for the same species again).
+    func testWikiEntryFactTilesAndInGardenCrossLink() throws {
+        let app = XCUIApplication()
+        app.launch()
+
+        let tabBar = app.tabBars.firstMatch
+        XCTAssertTrue(tabBar.waitForExistence(timeout: 20))
+
+        // Before placing it, Äppelträd's wiki entry shows fact tiles but no
+        // in-garden footer. Search for it first — the flat list sorts by
+        // raw commonName, which doesn't put every entry within the initial
+        // viewport.
+        tabBar.buttons["Wiki"].tap()
+        XCTAssertTrue(app.navigationBars["Plant Wiki"].waitForExistence(timeout: 20))
+        var searchField = app.searchFields["Search the wiki"]
+        XCTAssertTrue(searchField.waitForExistence(timeout: 10))
+        searchField.tap()
+        searchField.typeText("Äppelträd")
+        let appleRow = app.staticTexts["Äppelträd"]
+        XCTAssertTrue(appleRow.waitForExistence(timeout: 10))
+        appleRow.tap()
+        XCTAssertTrue(app.navigationBars["Äppelträd"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["Sow"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["Harvest"].exists)
+        XCTAssertTrue(app.staticTexts["Spacing"].exists)
+        XCTAssertTrue(app.staticTexts["Water"].exists)
+        XCTAssertFalse(app.buttons["Open"].exists)
+
+        // Place an Äppelträd on the Garden map.
+        tabBar.buttons["Garden"].tap()
+        XCTAssertTrue(app.navigationBars["Garden"].waitForExistence(timeout: 20))
+        app.navigationBars["Garden"].buttons["Add Plant"].tap()
+        XCTAssertTrue(app.navigationBars["Place Plant"].waitForExistence(timeout: 20))
+        app.buttons["Species, Choose one"].tap()
+        XCTAssertTrue(app.collectionViews.buttons["Äppelträd"].waitForExistence(timeout: 20))
+        app.collectionViews.buttons["Äppelträd"].tap()
+        app.buttons["Add"].tap()
+        XCTAssertTrue(app.buttons["Äppelträd"].waitForExistence(timeout: 20))
+
+        // The Wiki tab kept its navigation state (still pushed into the
+        // Äppelträd entry) — the footer reads the species' placements
+        // relationship live, so it should now show the cross-link without
+        // needing to re-navigate.
+        tabBar.buttons["Wiki"].tap()
+        XCTAssertTrue(app.navigationBars["Äppelträd"].waitForExistence(timeout: 20))
+        let openButton = app.buttons["Open"]
+        XCTAssertTrue(openButton.waitForExistence(timeout: 10))
+
+        // Tapping it opens the plant's own detail sheet. "Log harvest" is
+        // below the fold — scroll to it, same as elsewhere in this file.
+        openButton.tap()
+        app.swipeUp()
+        app.swipeUp()
+        XCTAssertTrue(app.buttons["Log harvest"].waitForExistence(timeout: 20))
+
+        // Its "Wiki" button round-trips back to a wiki entry for the same
+        // species. Disambiguate from the Wiki *tab* button — both have the
+        // label "Wiki", but only the tab bar one carries the "book.fill"
+        // accessibility identifier.
+        let sheetWikiButton = app.buttons.matching(
+            NSPredicate(format: "label == 'Wiki' AND identifier != 'book.fill'")
+        ).firstMatch
+        XCTAssertTrue(sheetWikiButton.waitForExistence(timeout: 10))
+        sheetWikiButton.tap()
+        XCTAssertTrue(app.navigationBars["Äppelträd"].waitForExistence(timeout: 20))
+    }
 }
