@@ -65,6 +65,8 @@ struct AddTaskSheet: View {
             isBuiltIn: false
         )
         modelContext.insert(task)
+        // Explicit save, not just insert() — see ADR 0020.
+        try? modelContext.save()
         dismiss()
     }
 }

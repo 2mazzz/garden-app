@@ -46,14 +46,18 @@ immediately after `modelContext.insert(task)`, before `dismiss()`.
   `try? modelContext.save()` right after `modelContext.insert(...)`, don't
   rely on SwiftData's autosave or a later, unrelated save to make the
   change visible to `@Query`.
-- **Follow-up, not yet done:** `AddPlantSheet`, `AddStructureSheet`,
-  `AddSpeciesSheet`, and `LogHarvestSheet` all insert without an explicit
-  save today. They appear to work in practice because `GardenAppUITests`
-  runs as one long-lived suite where an earlier test's save already
-  "warms" the same store, and interactive use naturally triggers other
-  saves (backgrounding, other edits) soon after. They carry the same
-  latent gap this ADR fixes for `GardenTask` and should get the same
-  explicit `save()` next time one of them is touched.
+- **Follow-up (2026-09-18): done.** `AddPlantSheet`, `AddStructureSheet`,
+  `AddSpeciesSheet`, `AddTaskSheet`, and `GardenMapView.addBed` all
+  inserted without an explicit save — `LogHarvestSheet` and
+  `AddPlantNoteSheet` had already picked up the fix independently. Found
+  while writing a Task 15 UI test that relaunches the app mid-test
+  (`app.terminate(); app.launch()`) to reset navigation state: a plant
+  added via `AddPlantSheet` was **gone** after relaunch — not just stale
+  in the UI, but never actually written to disk. Confirms this bug is
+  worse than "UI doesn't refresh": an insert with no save can be lost
+  entirely if the process is terminated before some *other*, unrelated
+  save happens to flush it. All five now call `try? modelContext.save()`
+  right after `insert()`.
 - Confirmed via a real build + a `-only-testing` UI test run against a
   freshly `simctl uninstall`-ed app (not just the full suite, which was
   warm enough to hide the bug), per the "Done means" rule in CLAUDE.md.

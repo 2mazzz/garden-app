@@ -125,6 +125,12 @@ struct AddPlantSheet: View {
             datePlanted: status == .planted || status == .growing ? .now : nil
         )
         modelContext.insert(plant)
+        // Explicit save, not just insert() — see ADR 0020: on a freshly-
+        // installed app, @Query doesn't reliably observe a plain insert
+        // until some save() flushes it, and (found while writing a UI test
+        // that relaunches mid-test) an unsaved insert doesn't even survive
+        // the app being terminated.
+        try? modelContext.save()
         dismiss()
     }
 

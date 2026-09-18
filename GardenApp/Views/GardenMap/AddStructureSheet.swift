@@ -135,6 +135,8 @@ struct AddStructureSheet: View {
             mapArea: mapArea
         )
         modelContext.insert(structure)
+        // Explicit save, not just insert() — see ADR 0020.
+        try? modelContext.save()
         dismiss()
     }
 }

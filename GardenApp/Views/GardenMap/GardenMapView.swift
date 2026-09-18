@@ -174,6 +174,8 @@ struct GardenMapView: View {
             mapArea: mapArea
         )
         modelContext.insert(bed)
+        // Explicit save, not just insert() — see ADR 0020.
+        try? modelContext.save()
     }
 
     /// A top-left origin for a new width x height item so it lands near

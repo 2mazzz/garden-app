@@ -121,6 +121,8 @@ struct AddSpeciesSheet: View {
             symbolName: category.symbolName
         )
         modelContext.insert(species)
+        // Explicit save, not just insert() — see ADR 0020.
+        try? modelContext.save()
         onAdd?(species)
         dismiss()
     }

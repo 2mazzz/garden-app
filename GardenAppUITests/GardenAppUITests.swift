@@ -152,8 +152,12 @@ final class GardenAppUITests: XCTestCase {
         )
 
         // Clean up so later tests in the suite don't see leftover data —
-        // the persistent store survives across app launches.
+        // the persistent store survives across app launches. "Remove from
+        // map" is the last row in the restyled detail sheet's Form, below
+        // the fold — scroll to it first.
         plantMarker.tap()
+        app.swipeUp()
+        app.swipeUp()
         XCTAssertTrue(app.buttons["Remove from map"].waitForExistence(timeout: 20))
         app.buttons["Remove from map"].tap()
 
@@ -289,6 +293,10 @@ final class GardenAppUITests: XCTestCase {
         let tree = app.buttons["Äppelträd"]
         XCTAssertTrue(tree.waitForExistence(timeout: 20))
         tree.tap()
+        // "Remove from map" is the last row in the restyled detail sheet's
+        // Form, below the fold — scroll to it first.
+        app.swipeUp()
+        app.swipeUp()
         XCTAssertTrue(app.buttons["Remove from map"].waitForExistence(timeout: 20))
         app.buttons["Remove from map"].tap()
         XCTAssertFalse(tree.waitForExistence(timeout: 15))
@@ -418,6 +426,15 @@ final class GardenAppUITests: XCTestCase {
         // the remaining "2 kg" entry should still be visible immediately.
         XCTAssertFalse(app.staticTexts["1 kg"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["2 kg"].waitForExistence(timeout: 5))
+
+        // Clean up so later tests in the suite don't see a leftover
+        // Äppelträd placement. "Remove from map" is further down, past the
+        // harvest log section already in view.
+        app.swipeUp()
+        app.swipeUp()
+        XCTAssertTrue(app.buttons["Remove from map"].waitForExistence(timeout: 20))
+        app.buttons["Remove from map"].tap()
+        XCTAssertFalse(tree.waitForExistence(timeout: 15))
     }
 
     /// Covers the Task 10 Wiki list restyle: filter chips, search, and
@@ -524,6 +541,25 @@ final class GardenAppUITests: XCTestCase {
         XCTAssertTrue(sheetWikiButton.waitForExistence(timeout: 10))
         sheetWikiButton.tap()
         XCTAssertTrue(app.navigationBars["Äppelträd"].waitForExistence(timeout: 20))
+
+        // Clean up so later tests in the suite don't see a leftover
+        // Äppelträd placement. Relaunching (not uninstalling) resets the
+        // nested sheet/navigation state from the round-trip above without
+        // losing the persistent store, so the removal flow below can reuse
+        // the same simple pattern every other test uses.
+        app.terminate()
+        app.launch()
+        XCTAssertTrue(tabBar.waitForExistence(timeout: 20))
+        tabBar.buttons["Garden"].tap()
+        XCTAssertTrue(app.navigationBars["Garden"].waitForExistence(timeout: 20))
+        let treeMarker = app.buttons["Äppelträd"]
+        XCTAssertTrue(treeMarker.waitForExistence(timeout: 20))
+        treeMarker.tap()
+        app.swipeUp()
+        app.swipeUp()
+        XCTAssertTrue(app.buttons["Remove from map"].waitForExistence(timeout: 20))
+        app.buttons["Remove from map"].tap()
+        XCTAssertFalse(treeMarker.waitForExistence(timeout: 15))
     }
 
     /// Covers the Task 12/13 Calendar restyle: month header + prev/next
@@ -579,6 +615,18 @@ final class GardenAppUITests: XCTestCase {
         // Switching back to "This month" restores the month body.
         app.buttons["This month"].tap()
         XCTAssertTrue(app.staticTexts[currentMonthName].waitForExistence(timeout: 10))
-    }
 
+        // Clean up so later tests in the suite don't see a leftover
+        // Äppelträd placement.
+        tabBar.buttons["Garden"].tap()
+        XCTAssertTrue(app.navigationBars["Garden"].waitForExistence(timeout: 20))
+        let treeMarker = app.buttons["Äppelträd"]
+        XCTAssertTrue(treeMarker.waitForExistence(timeout: 20))
+        treeMarker.tap()
+        app.swipeUp()
+        app.swipeUp()
+        XCTAssertTrue(app.buttons["Remove from map"].waitForExistence(timeout: 20))
+        app.buttons["Remove from map"].tap()
+        XCTAssertFalse(treeMarker.waitForExistence(timeout: 15))
+    }
 }
