@@ -517,4 +517,59 @@ final class GardenAppUITests: XCTestCase {
         sheetWikiButton.tap()
         XCTAssertTrue(app.navigationBars["Äppelträd"].waitForExistence(timeout: 20))
     }
+
+    /// Covers the Task 12/13 Calendar restyle: month header + prev/next
+    /// navigation, the This month/Whole year segmented control, and the
+    /// year grid showing a placed species' sow/grow/harvest phases.
+    func testCalendarHeaderNavigationAndYearGrid() throws {
+        let app = XCUIApplication()
+        app.launch()
+
+        let tabBar = app.tabBars.firstMatch
+        XCTAssertTrue(tabBar.waitForExistence(timeout: 20))
+
+        // Place a tree first so the year grid isn't empty.
+        tabBar.buttons["Garden"].tap()
+        XCTAssertTrue(app.navigationBars["Garden"].waitForExistence(timeout: 20))
+        app.navigationBars["Garden"].buttons["Add Plant"].tap()
+        XCTAssertTrue(app.navigationBars["Place Plant"].waitForExistence(timeout: 20))
+        app.buttons["Species, Choose one"].tap()
+        XCTAssertTrue(app.collectionViews.buttons["Äppelträd"].waitForExistence(timeout: 20))
+        app.collectionViews.buttons["Äppelträd"].tap()
+        app.buttons["Add"].tap()
+        XCTAssertTrue(app.buttons["Äppelträd"].waitForExistence(timeout: 20))
+
+        tabBar.buttons["Calendar"].tap()
+        XCTAssertTrue(app.navigationBars["Care Calendar"].waitForExistence(timeout: 20))
+
+        // The header shows the current month name; the seeded September
+        // task cards ("Plantera vårlökar" etc.) confirm "This month" is
+        // showing real content, not an empty state.
+        let currentMonthName = DateFormatter().monthSymbols[Calendar.current.component(.month, from: .now) - 1]
+        XCTAssertTrue(app.staticTexts[currentMonthName].waitForExistence(timeout: 10))
+
+        // Prev/next chevrons step the header's month name.
+        let nextButton = app.buttons["Next month"]
+        XCTAssertTrue(nextButton.waitForExistence(timeout: 10))
+        nextButton.tap()
+        XCTAssertFalse(app.staticTexts[currentMonthName].exists,
+                        "Expected the header's month to change after tapping next")
+
+        let prevButton = app.buttons["Previous month"]
+        prevButton.tap()
+        XCTAssertTrue(app.staticTexts[currentMonthName].waitForExistence(timeout: 10),
+                       "Expected tapping prev to return to the original month")
+
+        // The segmented control switches to the year grid, which shows the
+        // placed Äppelträd's row.
+        app.buttons["Whole year"].tap()
+        XCTAssertTrue(app.staticTexts["Äppelträd"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["Sow"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Grow"].exists)
+        XCTAssertTrue(app.staticTexts["Harvest"].exists)
+
+        // Switching back to "This month" restores the month body.
+        app.buttons["This month"].tap()
+        XCTAssertTrue(app.staticTexts[currentMonthName].waitForExistence(timeout: 10))
+    }
 }
