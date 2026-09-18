@@ -149,9 +149,13 @@ struct BedView: View {
 
     // MARK: - Triangle
 
-    private var canvasWidth: CGFloat { CGFloat(mapArea.columns) * mapCellSize }
-    private var canvasHeight: CGFloat { CGFloat(mapArea.rows) * mapCellSize }
+    /// Corner rounding radius for the triangle's fill/stroke/hit-test path —
+    /// matches the rectangle bed's RoundedRectangle radius for visual
+    /// consistency.
+    private let triangleCornerRadius: CGFloat = GreenhouseTheme.Radius.card
 
+    /// Absolute position (in the map canvas's own coordinate space) of one
+    /// vertex, including any in-flight drag translation.
     private func liveVertexPoint(_ index: Int) -> CGPoint {
         let v = bed.vertex(at: index)
         var point = CGPoint(x: CGFloat(v.x) * mapCellSize, y: CGFloat(v.y) * mapCellSize)
@@ -166,26 +170,52 @@ struct BedView: View {
         return point
     }
 
-    private var trianglePath: Path {
-        var path = Path()
+    /// Bounding box of the live vertices, in the map canvas's coordinate
+    /// space. Unlike the rectangle case, this view previously sized itself
+    /// to the *entire map canvas* (so its Path could use absolute
+    /// coordinates) — every triangle bed's hit-testable frame silently
+    /// overlapped the whole map, making it hard to tap/drag anything nearby
+    /// precisely. Sizing tightly to this box, like the rectangle bed does,
+    /// fixes that.
+    private var triangleBoundingBox: (origin: CGPoint, size: CGSize) {
         let points = (0..<3).map { liveVertexPoint($0) }
-        path.move(to: points[0])
-        path.addLine(to: points[1])
-        path.addLine(to: points[2])
-        path.closeSubpath()
-        return path
+        let minX = points.map(\.x).min() ?? 0
+        let minY = points.map(\.y).min() ?? 0
+        let maxX = points.map(\.x).max() ?? 0
+        let maxY = points.map(\.y).max() ?? 0
+        return (
+            CGPoint(x: minX, y: minY),
+            CGSize(width: max(mapCellSize, maxX - minX), height: max(mapCellSize, maxY - minY))
+        )
     }
 
-    private var triangleCentroid: CGPoint {
-        let points = (0..<3).map { liveVertexPoint($0) }
-        return CGPoint(x: points.reduce(0) { $0 + $1.x } / 3, y: points.reduce(0) { $0 + $1.y } / 3)
-    }
+    /// Every triangle vertex sits exactly on its own bounding box's edge
+    /// (that's what "bounding box" means) — so with zero margin, each
+    /// vertex's enlarged hit circle (see below) would be flush against this
+    /// view's own frame boundary, right where SwiftUI's hit-testing is
+    /// least reliable for a child positioned via `.position()`. This margin
+    /// keeps every vertex, and its hit circle, safely inside the frame.
+    private var trianglePadding: CGFloat { 20 }
 
     private var triangleBody: some View {
-        ZStack(alignment: .topLeading) {
-            trianglePath
+        let box = triangleBoundingBox
+        // Vertex points relative to `box.origin`, inset by `trianglePadding`
+        // — this view's own frame (below) is sized/positioned to the
+        // bounding box plus that padding, not the whole canvas.
+        let localPoints = (0..<3).map { index -> CGPoint in
+            let p = liveVertexPoint(index)
+            return CGPoint(x: p.x - box.origin.x + trianglePadding, y: p.y - box.origin.y + trianglePadding)
+        }
+        let path = roundedPolygonPath(points: localPoints, radius: triangleCornerRadius)
+        let centroid = CGPoint(
+            x: localPoints.reduce(0) { $0 + $1.x } / 3,
+            y: localPoints.reduce(0) { $0 + $1.y } / 3
+        )
+
+        return ZStack(alignment: .topLeading) {
+            path
                 .fill(Color(hex: bed.colorHex).opacity(fillOpacity))
-            trianglePath
+            path
                 .stroke(
                     Color(hex: bed.colorHex),
                     lineWidth: (isDraggingBody || draggingVertexIndex != nil) ? borderWidth + 1.5 : borderWidth
@@ -193,20 +223,36 @@ struct BedView: View {
             Text(bed.name)
                 .font(GreenhouseTheme.Font.small())
                 .foregroundStyle(GreenhouseTheme.Color.metaText)
-                .position(triangleCentroid)
+                .position(centroid)
 
             ForEach(0..<3, id: \.self) { index in
+                let neighborA = localPoints[(index + 1) % 3]
+                let neighborB = localPoints[(index + 2) % 3]
+                let shorterAdjacentEdge = min(
+                    localPoints[index].distance(to: neighborA),
+                    localPoints[index].distance(to: neighborB)
+                )
+                // Visual dot stays 14pt, but the draggable area is enlarged
+                // past it — a bare 14pt target is far below the ~44pt a
+                // finger can reliably hit, which was part of why reshaping
+                // felt hard to grab. Capped at a fraction of the shorter
+                // adjacent edge so on the small default triangle (2x2
+                // cells) the 3 enlarged corners don't swallow the entire
+                // shape and leave no room to grab the body to move it.
+                let hitRadius = min(20, shorterAdjacentEdge * 0.22)
                 Circle()
                     .fill(Color(hex: bed.colorHex))
                     .overlay(Circle().stroke(.white, lineWidth: 1.5))
                     .frame(width: 14, height: 14)
-                    .position(liveVertexPoint(index))
+                    .contentShape(Circle().inset(by: 7 - hitRadius))
+                    .position(localPoints[index])
                     .gesture(vertexDragGesture(index))
             }
         }
-        .contentShape(trianglePath)
+        .contentShape(path)
         .gesture(moveTriangleGesture)
-        .frame(width: canvasWidth, height: canvasHeight, alignment: .topLeading)
+        .frame(width: box.size.width + trianglePadding * 2, height: box.size.height + trianglePadding * 2, alignment: .topLeading)
+        .position(x: box.origin.x + box.size.width / 2, y: box.origin.y + box.size.height / 2)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(bed.name)
         .accessibilityAddTraits(.isButton)
@@ -261,5 +307,49 @@ struct BedView: View {
 
     private func clamp(_ value: Int, _ lower: Int, _ upper: Int) -> Int {
         min(max(value, lower), upper)
+    }
+}
+
+/// Builds a closed Path visiting `points` in order with each corner rounded
+/// to `radius` — a quadratic curve from a point `radius` back along the
+/// incoming edge to a point `radius` along the outgoing edge, using the
+/// original vertex as the curve's control point. Each corner's radius is
+/// clamped to half its shorter adjacent edge so thin/small triangles don't
+/// produce overlapping or self-intersecting curves.
+private func roundedPolygonPath(points: [CGPoint], radius: CGFloat) -> Path {
+    var path = Path()
+    let count = points.count
+    guard count >= 3 else { return path }
+
+    for i in 0..<count {
+        let prev = points[(i - 1 + count) % count]
+        let curr = points[i]
+        let next = points[(i + 1) % count]
+
+        let r = min(radius, curr.distance(to: prev) / 2, curr.distance(to: next) / 2)
+        let startPoint = curr.interpolated(towards: prev, distance: r)
+        let endPoint = curr.interpolated(towards: next, distance: r)
+
+        if i == 0 {
+            path.move(to: startPoint)
+        } else {
+            path.addLine(to: startPoint)
+        }
+        path.addQuadCurve(to: endPoint, control: curr)
+    }
+    path.closeSubpath()
+    return path
+}
+
+private extension CGPoint {
+    func distance(to other: CGPoint) -> CGFloat {
+        hypot(other.x - x, other.y - y)
+    }
+
+    func interpolated(towards other: CGPoint, distance: CGFloat) -> CGPoint {
+        let length = self.distance(to: other)
+        guard length > 0 else { return self }
+        let t = distance / length
+        return CGPoint(x: x + (other.x - x) * t, y: y + (other.y - y) * t)
     }
 }

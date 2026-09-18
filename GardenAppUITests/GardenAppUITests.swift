@@ -1,7 +1,7 @@
 import XCTest
 
 /// Smoke test exercising the main navigation flows: entering the
-/// greenhouse from the garden map, and switching between all three tabs.
+/// greenhouse from the garden map, and switching between tabs.
 final class GardenAppUITests: XCTestCase {
     func testGardenShowsGreenhouseAndTabsSwitch() throws {
         let app = XCUIApplication()
@@ -9,12 +9,15 @@ final class GardenAppUITests: XCTestCase {
 
         let tabBar = app.tabBars.firstMatch
         XCTAssertTrue(tabBar.waitForExistence(timeout: 20))
+        XCTAssertTrue(tabBar.buttons["Today"].exists)
         XCTAssertTrue(tabBar.buttons["Garden"].exists)
         XCTAssertTrue(tabBar.buttons["Calendar"].exists)
         XCTAssertTrue(tabBar.buttons["Wiki"].exists)
         XCTAssertTrue(tabBar.buttons["Settings"].exists)
 
-        // Garden tab is the home screen and shows the greenhouse structure.
+        // Today is the home tab on launch; switch to Garden, which shows
+        // the greenhouse structure.
+        tabBar.buttons["Garden"].tap()
         XCTAssertTrue(app.navigationBars["Garden"].waitForExistence(timeout: 20))
         let greenhouseButton = app.buttons["Greenhouse"]
         XCTAssertTrue(greenhouseButton.waitForExistence(timeout: 20))
@@ -53,6 +56,9 @@ final class GardenAppUITests: XCTestCase {
         let app = XCUIApplication()
         app.launch()
 
+        let tabBar = app.tabBars.firstMatch
+        XCTAssertTrue(tabBar.waitForExistence(timeout: 20))
+        tabBar.buttons["Garden"].tap()
         XCTAssertTrue(app.navigationBars["Garden"].waitForExistence(timeout: 20))
 
         // Creating a bed shows it immediately with no popup — "Add Bed" is
@@ -91,6 +97,9 @@ final class GardenAppUITests: XCTestCase {
         let app = XCUIApplication()
         app.launch()
 
+        let tabBar = app.tabBars.firstMatch
+        XCTAssertTrue(tabBar.waitForExistence(timeout: 20))
+        tabBar.buttons["Garden"].tap()
         XCTAssertTrue(app.navigationBars["Garden"].waitForExistence(timeout: 20))
 
         app.navigationBars["Garden"].buttons["Add Bed"].tap()
@@ -156,6 +165,9 @@ final class GardenAppUITests: XCTestCase {
         let app = XCUIApplication()
         app.launch()
 
+        let tabBar = app.tabBars.firstMatch
+        XCTAssertTrue(tabBar.waitForExistence(timeout: 20))
+        tabBar.buttons["Garden"].tap()
         XCTAssertTrue(app.navigationBars["Garden"].waitForExistence(timeout: 20))
 
         app.navigationBars["Garden"].buttons["Add Structure"].tap()
@@ -197,6 +209,9 @@ final class GardenAppUITests: XCTestCase {
         let app = XCUIApplication()
         app.launch()
 
+        let tabBar = app.tabBars.firstMatch
+        XCTAssertTrue(tabBar.waitForExistence(timeout: 20))
+        tabBar.buttons["Garden"].tap()
         XCTAssertTrue(app.navigationBars["Garden"].waitForExistence(timeout: 20))
 
         app.navigationBars["Garden"].buttons["Add Bed"].tap()
@@ -215,7 +230,23 @@ final class GardenAppUITests: XCTestCase {
         XCTAssertNotEqual(movedBed.frame.origin.x, originalFrame.origin.x,
                            "Expected the triangle's on-screen position to change after dragging it")
 
-        movedBed.tap()
+        // Dragging a corner dot (the apex, at the top-center of the
+        // bounding box) reshapes the triangle independently, growing its
+        // bounding box — distinct from the whole-shape move above. The
+        // default new bed is a 2x2-cell (64x64pt) triangle inside a
+        // frame padded 20pt on every side (see BedView.trianglePadding),
+        // so the apex sits at normalized (0.5, 20/104 ≈ 0.19), not (0.5, 0).
+        let beforeReshapeFrame = movedBed.frame
+        let apex = movedBed.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.19))
+        let apexTarget = movedBed.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: -1.3))
+        apex.press(forDuration: 0.1, thenDragTo: apexTarget)
+
+        let reshapedBed = app.buttons["New bed"]
+        XCTAssertTrue(reshapedBed.waitForExistence(timeout: 20))
+        XCTAssertGreaterThan(reshapedBed.frame.height, beforeReshapeFrame.height,
+                              "Expected dragging the apex further away to grow the triangle's bounding box")
+
+        reshapedBed.tap()
         XCTAssertTrue(app.navigationBars["Edit Bed"].waitForExistence(timeout: 20))
         XCTAssertTrue(app.buttons["Delete bed"].waitForExistence(timeout: 12))
 
@@ -231,6 +262,9 @@ final class GardenAppUITests: XCTestCase {
         let app = XCUIApplication()
         app.launch()
 
+        let tabBar = app.tabBars.firstMatch
+        XCTAssertTrue(tabBar.waitForExistence(timeout: 20))
+        tabBar.buttons["Garden"].tap()
         XCTAssertTrue(app.navigationBars["Garden"].waitForExistence(timeout: 20))
 
         app.navigationBars["Garden"].buttons["Add Plant"].tap()
