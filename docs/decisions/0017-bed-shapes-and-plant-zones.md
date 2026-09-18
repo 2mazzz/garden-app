@@ -64,3 +64,39 @@ so it's not offered rather than guessing.
   requirement from [0009](0009-cloudkit-attribute-defaults.md) — every
   plant already in the database silently becomes a 1×1 footprint, every
   bed already in the database silently becomes (and stays) a rectangle.
+
+## Addendum (2026-09-18): sharp corners and hard-to-grab hit-testing
+
+Real usage surfaced two problems with the triangle shape specifically:
+
+1. **Sharp corners** — purely visual, fixed with a small
+   `roundedPolygonPath()` helper in `BedView.swift` that rounds each
+   corner via a quadratic curve, radius clamped to half the shorter
+   adjacent edge so small/thin triangles don't self-intersect.
+2. **Hard to tap/drag** — the actual root cause was architectural, not a
+   gesture bug: `BedView`'s triangle case sized its own view to the
+   *entire map canvas* (so its `Path` could use absolute canvas
+   coordinates), unlike the rectangle case which sizes tightly to its own
+   bounds via `.position()`. Every triangle bed's hit-testable frame
+   silently overlapped the whole map — including every other bed,
+   structure, and plant on it — degrading tap/drag precision everywhere
+   near a triangle, not just on the triangle itself.
+
+   Fixed by sizing/positioning the view to the triangle's own bounding
+   box, matching the rectangle bed's pattern. Two things fell out of
+   getting this right, both worth remembering for any future freeform-
+   shape work on this map:
+   - A vertex of a triangle sits **exactly on its own bounding box's
+     edge**, by definition. Corner drag handles positioned there, with no
+     margin, sit flush against the containing view's own frame boundary —
+     where SwiftUI's `.position()`-based hit-testing for a child view is
+     least reliable. A fixed padding margin around the bounding box (see
+     `BedView.trianglePadding`) keeps every vertex, and its enlarged drag
+     target, safely inside the frame's interior.
+   - Enlarging a corner dot's tappable area past its ~14pt visual size
+     (good — a bare 14pt target is well below what a finger reliably
+     hits) has to be capped relative to the shape's own edge lengths, not
+     a fixed value. The default new bed is a small 2x2-cell triangle; a
+     fixed ~44pt-diameter target per corner is big enough that 3 of them
+     cover the *entire* shape, leaving no room to grab the body to move
+     it rather than reshape it.
