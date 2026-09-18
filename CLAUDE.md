@@ -73,10 +73,20 @@ rule above.
   MapArea when tapped), `PlacedPlant` (one actual plant/tree instance,
   positioned on a MapArea and optionally inside a Bed),
   `MonthlyTaskTemplate` (calendar tasks by month, 1-12).
-- **Tabs:** Garden (home screen — outdoor map, including the greenhouse
+- **Tabs (5, in order):** Today (day-grouped hand-entered tasks —
+  `GardenTask`, distinct from the Calendar's recurring
+  `MonthlyTaskTemplate`), Garden (outdoor map, including the greenhouse
   building; tapping it pushes into the Greenhouse's own map via the same
-  `GardenMapView`), Care Calendar, Plant Wiki. There is no separate
-  Greenhouse tab — see `docs/decisions/0006-garden-home-with-structures.md`.
+  `GardenMapView`), Plant Wiki, Care Calendar, Settings. There is no
+  separate Greenhouse tab — see
+  `docs/decisions/0006-garden-home-with-structures.md`.
+- **Visual system:** One fixed theme, `GreenhouseTheme`
+  (`GardenApp/Theme/`) — colors/fonts/spacing/radii as static constants,
+  plus a shared component kit (`GHButtonStyle`, `GHBadge`, `GHChip`,
+  etc.) in `GreenhouseComponents.swift`. Replaced the old switchable
+  `GardenTheme`/Settings theme picker — see
+  `docs/decisions/0018-greenhouse-design-system.md` and
+  `docs/plans/2026-09-15-greenhouse-redesign-design.md`.
 - **First-launch data:** `GardenApp/Seed/SeedData.swift` seeds the two
   MapAreas, the Greenhouse Structure, a starter catalog of common Swedish
   garden plants, and monthly tasks tuned to a Swedish growing season — see
