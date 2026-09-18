@@ -377,4 +377,40 @@ final class GardenAppUITests: XCTestCase {
         XCTAssertFalse(app.staticTexts["1 kg"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["2 kg"].waitForExistence(timeout: 5))
     }
+
+    /// Covers the Task 10 Wiki list restyle: filter chips, search, and
+    /// row-to-detail navigation on the new flat row list.
+    func testWikiListFilterSearchAndNavigation() throws {
+        let app = XCUIApplication()
+        app.launch()
+
+        let tabBar = app.tabBars.firstMatch
+        XCTAssertTrue(tabBar.waitForExistence(timeout: 20))
+        tabBar.buttons["Wiki"].tap()
+        XCTAssertTrue(app.navigationBars["Plant Wiki"].waitForExistence(timeout: 20))
+
+        // Category chips are present, derived from the seeded catalog.
+        XCTAssertTrue(app.buttons["Vegetable"].waitForExistence(timeout: 10))
+
+        // "In my garden" filters to nothing on a fresh install (no placements yet).
+        app.buttons["In my garden"].tap()
+        XCTAssertFalse(app.staticTexts["Dill"].waitForExistence(timeout: 5))
+        app.buttons["In my garden"].tap() // toggle back off
+        XCTAssertTrue(app.staticTexts["Dill"].waitForExistence(timeout: 10))
+
+        // Search narrows the flat list.
+        let searchField = app.searchFields["Search the wiki"]
+        XCTAssertTrue(searchField.waitForExistence(timeout: 10))
+        searchField.tap()
+        searchField.typeText("Dill")
+        XCTAssertTrue(app.staticTexts["Dill"].waitForExistence(timeout: 10))
+        XCTAssertFalse(app.staticTexts["Morot"].exists)
+        app.buttons["Close"].tap()
+
+        // Tapping a row navigates to its detail, matching navigationDestination.
+        let dillRow = app.staticTexts["Dill"]
+        XCTAssertTrue(dillRow.waitForExistence(timeout: 10))
+        dillRow.tap()
+        XCTAssertTrue(app.navigationBars["Dill"].waitForExistence(timeout: 10))
+    }
 }
